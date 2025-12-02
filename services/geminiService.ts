@@ -3,9 +3,12 @@ import { Transaction } from "../types";
 
 // Helper to get AI instance safely
 const getAI = () => {
+  // Use process.env.API_KEY exclusively as per guidelines.
+  // We assume process.env.API_KEY is valid and accessible.
   const apiKey = process.env.API_KEY;
+  
   if (!apiKey) {
-    // console.warn("API Key not found"); // Suppress warning in preview if needed
+    // console.warn("API Key not found"); 
     return null;
   }
   return new GoogleGenAI({ apiKey });
@@ -94,6 +97,6 @@ export const getFinancialAdvice = async (transactions: Transaction[]): Promise<s
     return response.text || "لا توجد بيانات كافية للتحليل حالياً.";
   } catch (error) {
     // Suppress console error
-    return "خدمة المساعد المالي غير متاحة حالياً (وضع المعاينة).";
+    return "خدمة المساعد المالي غير متاحة حالياً.";
   }
 };
