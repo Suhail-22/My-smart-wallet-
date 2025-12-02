@@ -2,23 +2,35 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-// Polyfill for crypto.randomUUID for environments where it is missing (e.g. insecure contexts)
-if (typeof crypto === 'undefined') {
-  (window as any).crypto = {
-    randomUUID: () => {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
+// Robust Polyfill for crypto.randomUUID
+// This prevents crashes in browsers where crypto is undefined or read-only
+try {
+  if (typeof crypto === 'undefined') {
+    Object.defineProperty(window, 'crypto', {
+      value: {
+        randomUUID: generateUUID
+      },
+      writable: true,
+      configurable: true
+    });
+  } else if (!crypto.randomUUID) {
+    // Some browsers have crypto but no randomUUID
+    // We try to assign it, but handle cases where crypto is read-only
+    try {
+      crypto.randomUUID = generateUUID as any;
+    } catch(e) {
+      console.warn("Failed to assign crypto.randomUUID", e);
     }
   }
-} else if (!crypto.randomUUID) {
-  crypto.randomUUID = () => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    }) as `${string}-${string}-${string}-${string}-${string}`;
-  };
+} catch (e) {
+  console.warn("Crypto polyfill failed", e);
+}
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
 
 const rootElement = document.getElementById('root');
