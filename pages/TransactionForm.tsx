@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { TransactionType, Category } from '../types';
-import { ArrowLeft, Calculator, Camera, ChevronDown, Image as ImageIcon, Menu, Smile, Meh, Frown, Plus, X, Calendar, AlignLeft, Users, Contact as ContactIcon } from 'lucide-react';
+import { ArrowLeft, Calculator, Camera, ChevronDown, Image as ImageIcon, Menu, Smile, Meh, Frown, Users, Contact as ContactIcon, AlignLeft, Calendar } from 'lucide-react';
 import { ContactPicker } from '../components/ContactPicker';
 
 // Simple Keyword Mapping for Auto-Categorization
@@ -34,11 +34,6 @@ export const TransactionForm: React.FC = () => {
     contactName: '',
     groupName: ''
   });
-
-  // Quick Add Category State
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryIcon, setNewCategoryIcon] = useState('');
 
   // Filter categories based on selected type
   const availableCategories = categories.filter(c => c.type === formData.type);
@@ -85,25 +80,6 @@ export const TransactionForm: React.FC = () => {
       alertReminder: formData.alertReminder
     });
     navigate('/');
-  };
-
-  const handleQuickAddCategory = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCategoryName.trim()) return;
-
-    const newCat: Category = {
-      id: crypto.randomUUID(),
-      label: newCategoryName.trim(),
-      icon: newCategoryIcon.trim() || '🏷️',
-      type: formData.type,
-      isDefault: false
-    };
-
-    addCategory(newCat);
-    setFormData(prev => ({ ...prev, category: newCat.id }));
-    setNewCategoryName('');
-    setNewCategoryIcon('');
-    setIsAddingCategory(false);
   };
 
   return (
