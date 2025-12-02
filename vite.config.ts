@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   define: {
-    'process.env': {}
+    'process.env': JSON.stringify(process.env)
   },
   resolve: {
     alias: {
