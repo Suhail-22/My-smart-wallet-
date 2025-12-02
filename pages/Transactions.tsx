@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { History, ArrowDown, ArrowUp, Search, ArrowUpDown } from 'lucide-react';
+import { History, ArrowDown, ArrowUp, Search, ArrowUpDown, Image as ImageIcon, X } from 'lucide-react';
 
 type SortOption = 'DATE_DESC' | 'DATE_ASC' | 'AMOUNT_DESC' | 'AMOUNT_ASC' | 'CATEGORY';
 
@@ -9,6 +9,7 @@ export const Transactions: React.FC = () => {
   const { transactions, categories, currency } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('DATE_DESC');
+  const [viewImage, setViewImage] = useState<string | null>(null);
 
   // 1. Filter Transactions
   const filteredTransactions = transactions.filter(t => {
@@ -94,7 +95,10 @@ export const Transactions: React.FC = () => {
                   </div>
                   <div>
                     <p className="font-bold text-gray-800 dark:text-white text-lg">{categoryObj?.label || t.category}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{t.description}</p>
+                    <div className="flex items-center gap-2">
+                         <p className="text-sm text-gray-500 dark:text-gray-400">{t.description}</p>
+                         {t.isRecurring && <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">متكرر</span>}
+                    </div>
                     <p className="text-xs text-gray-400 mt-1">{t.date}</p>
                   </div>
                 </div>
@@ -102,11 +106,22 @@ export const Transactions: React.FC = () => {
                   <p className={`font-bold text-lg ${t.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-800 dark:text-gray-300'}`} dir="ltr">
                     {t.type === 'INCOME' ? '+' : '-'}{currency} {t.amount.toLocaleString()}
                   </p>
-                  {t.profit && t.profit > 0 && (
-                      <span className="text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded inline-block mt-1">
-                          ربح: {t.profit}
-                      </span>
-                  )}
+                  <div className="flex items-center justify-end gap-2 mt-1">
+                      {t.profit && t.profit > 0 && (
+                          <span className="text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded inline-block">
+                              ربح: {t.profit}
+                          </span>
+                      )}
+                      {t.receiptImage && (
+                          <button 
+                             onClick={() => setViewImage(t.receiptImage!)}
+                             className="text-gray-400 hover:text-emerald-500"
+                             title="عرض السند"
+                          >
+                             <ImageIcon size={18} />
+                          </button>
+                      )}
+                  </div>
                 </div>
               </div>
             );
@@ -118,6 +133,18 @@ export const Transactions: React.FC = () => {
             </div>
         )}
       </div>
+
+      {/* Image Modal */}
+      {viewImage && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setViewImage(null)}>
+              <div className="relative max-w-full max-h-full">
+                  <button className="absolute -top-10 right-0 text-white" onClick={() => setViewImage(null)}>
+                      <X size={30} />
+                  </button>
+                  <img src={viewImage} alt="Receipt" className="max-w-full max-h-[90vh] rounded-xl" />
+              </div>
+          </div>
+      )}
     </div>
   );
 };

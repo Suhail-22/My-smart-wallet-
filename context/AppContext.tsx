@@ -166,6 +166,67 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return saved ? JSON.parse(saved) : [];
   });
 
+  // --- RECURRING TRANSACTION LOGIC ---
+  useEffect(() => {
+    const checkRecurring = () => {
+        const today = new Date();
+        const currentMonth = today.toISOString().slice(0, 7); // YYYY-MM
+        let newTransactions: Transaction[] = [];
+        let updatedTemplates: Transaction[] = [];
+        let hasChanges = false;
+
+        const currentTxList = [...transactions];
+
+        currentTxList.forEach(t => {
+            if (t.isRecurring) {
+                // If it was last processed this month, skip
+                if (t.lastProcessedDate && t.lastProcessedDate.startsWith(currentMonth)) {
+                    return;
+                }
+                
+                // If the day of month has passed or is today (e.g. created on 5th, today is 6th)
+                const createdDay = new Date(t.date).getDate();
+                if (today.getDate() >= createdDay) {
+                     // Clone transaction for this month
+                     const newDate = new Date();
+                     newDate.setDate(createdDay);
+                     const newDateStr = newDate.toISOString().split('T')[0];
+
+                     // Only add if we haven't already made one for this specific day/month combo (double check)
+                     // (handled by lastProcessedDate usually, but just in case)
+                     
+                     const newTx: Transaction = {
+                         ...t,
+                         id: crypto.randomUUID(),
+                         date: newDateStr,
+                         isRecurring: false, // Child is not recurring
+                         lastProcessedDate: undefined,
+                         description: `${t.description} (تلقائي)`,
+                     };
+
+                     newTransactions.push(newTx);
+                     
+                     // Update parent
+                     t.lastProcessedDate = newDateStr;
+                     hasChanges = true;
+                }
+            }
+        });
+
+        if (hasChanges) {
+            setTransactions(prev => [...newTransactions, ...prev.map(p => {
+                const updated = currentTxList.find(c => c.id === p.id);
+                return updated || p;
+            })]);
+            alert(`تم إضافة ${newTransactions.length} معاملات متكررة لهذا الشهر.`);
+        }
+    };
+
+    // Run once on mount
+    checkRecurring();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array to run only on app start
+
   // Persistence Effects
   useEffect(() => localStorage.setItem('transactions', JSON.stringify(transactions)), [transactions]);
   useEffect(() => localStorage.setItem('debts', JSON.stringify(debts)), [debts]);

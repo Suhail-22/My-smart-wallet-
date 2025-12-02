@@ -56,6 +56,7 @@ export interface Transaction {
   profit?: number; 
   necessityLevel?: 'NECESSITY' | 'NORMAL' | 'LUXURY'; 
   isRecurring?: boolean;
+  lastProcessedDate?: string; // Tracks when the last recurring copy was made
   isExcludedFromBalance?: boolean;
   contactName?: string; // Linked contact
   groupName?: string; // Optional grouping

@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   define: {
-    // This is the critical fix for the "White Screen" on Vercel.
-    // It replaces 'process.env' with an empty object in the browser,
-    // preventing "ReferenceError: process is not defined".
+    // CRITICAL FIX: This prevents "ReferenceError: process is not defined" 
+    // which causes the White Screen crash on Vercel/Netlify.
+    // We define 'process.env' as an empty object so code accessing it doesn't crash.
     'process.env': {},
   },
   resolve: {
