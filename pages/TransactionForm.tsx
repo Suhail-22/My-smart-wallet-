@@ -29,6 +29,7 @@ export const TransactionForm: React.FC = () => {
     walletId: wallets[0]?.id || '',
     necessityLevel: 'NORMAL' as 'NECESSITY' | 'NORMAL' | 'LUXURY',
     isRecurring: false,
+    alertReminder: false,
     isExcludedFromBalance: false,
     contactName: '',
     groupName: ''
@@ -80,7 +81,8 @@ export const TransactionForm: React.FC = () => {
       isRecurring: formData.isRecurring,
       isExcludedFromBalance: formData.isExcludedFromBalance,
       contactName: formData.contactName,
-      groupName: formData.groupName
+      groupName: formData.groupName,
+      alertReminder: formData.alertReminder
     });
     navigate('/');
   };
@@ -217,7 +219,7 @@ export const TransactionForm: React.FC = () => {
               </div>
 
               {/* Recurring Toggle */}
-              <div className="bg-white dark:bg-gray-800 p-4 mb-2 flex items-center justify-between">
+              <div className="bg-white dark:bg-gray-800 p-4 mb-0 flex items-center justify-between border-b border-gray-50 dark:border-gray-700">
                   <span className="text-gray-600 dark:text-gray-300">تكرار المعاملة</span>
                   <div 
                     className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer ${formData.isRecurring ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}
@@ -226,13 +228,24 @@ export const TransactionForm: React.FC = () => {
                       <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.isRecurring ? '-translate-x-6' : 'translate-x-0'}`} />
                   </div>
               </div>
+              
+              {/* Alert Toggle */}
+               <div className="bg-white dark:bg-gray-800 p-4 mb-2 flex items-center justify-between">
+                  <span className="text-gray-600 dark:text-gray-300 text-sm">التنبيه بالمعاملة (سيتم تذكيرك قبل الموعد)</span>
+                  <div 
+                    className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer ${formData.alertReminder ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                    onClick={() => setFormData({...formData, alertReminder: !formData.alertReminder})}
+                  >
+                      <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.alertReminder ? '-translate-x-6' : 'translate-x-0'}`} />
+                  </div>
+              </div>
 
               {/* Group & Contact Section (Masareef Style) */}
               <div className="bg-white dark:bg-gray-800 p-4 mb-2 space-y-3">
                  {/* Group / Project */}
                  <div className="flex items-center gap-3">
-                    <div className="text-gray-400 w-6 flex justify-center"><Users size={20} /></div>
-                    <span className="text-gray-500 dark:text-gray-400 text-sm w-20">المجموعة</span>
+                    <div className="text-gray-400 w-8 flex justify-center"><Users size={22} /></div>
+                    <span className="text-gray-500 dark:text-gray-400 font-medium w-24">المجموعة</span>
                     <input 
                         type="text" 
                         placeholder="مشروع / عائلة (اختياري)" 
@@ -244,8 +257,8 @@ export const TransactionForm: React.FC = () => {
                  
                  {/* Contact */}
                  <div className="flex items-center gap-3">
-                    <div className="text-gray-400 w-6 flex justify-center"><ContactIcon size={20} /></div>
-                    <span className="text-gray-500 dark:text-gray-400 text-sm w-20">جهة الإتصال</span>
+                    <div className="text-yellow-400 w-8 flex justify-center"><ContactIcon size={22} className="fill-current" /></div>
+                    <span className="text-gray-500 dark:text-gray-400 font-medium w-24">جهة الإتصال</span>
                     <div className="flex-1">
                         <ContactPicker 
                             onSelect={(name) => setFormData({...formData, contactName: name})}
@@ -280,7 +293,7 @@ export const TransactionForm: React.FC = () => {
                           <button 
                              type="button"
                              onClick={() => setFormData({...formData, necessityLevel: 'NECESSITY'})}
-                             className={`flex flex-col items-center gap-1 p-2 rounded-lg ${formData.necessityLevel === 'NECESSITY' ? 'bg-gray-100 text-gray-800 font-bold' : 'text-gray-400'}`}
+                             className={`flex flex-col items-center gap-1 p-2 rounded-lg ${formData.necessityLevel === 'NECESSITY' ? 'bg-emerald-100 text-emerald-800 font-bold' : 'text-gray-400'}`}
                           >
                              <Smile size={24} />
                              <span className="text-xs">أساسي</span>

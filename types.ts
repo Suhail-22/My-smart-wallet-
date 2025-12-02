@@ -29,49 +29,50 @@ export interface Contact {
 export interface Wallet {
   id: string;
   name: string;
-  type: 'CASH' | 'BANK' | 'DIGITAL' | 'DEBT' | 'OTHER'; // Added DEBT type
-  balance: number; // Current calculated balance
+  type: 'CASH' | 'BANK' | 'DIGITAL' | 'DEBT' | 'OTHER'; 
+  balance: number; 
   currency: string;
-  isHidden?: boolean; // New: Hide from dashboard
+  isHidden?: boolean; 
 }
 
 export interface Category {
   id: string;
   label: string;
-  icon?: string; // Emoji character
+  icon?: string; 
   type: TransactionType;
   isDefault: boolean;
-  budgetLimit?: number; // Monthly budget limit for this category
+  budgetLimit?: number; 
 }
 
 export interface Transaction {
   id: string;
   amount: number;
-  category: string; // Stores Category ID
-  walletId?: string; // Which wallet this transaction affects
+  category: string; 
+  walletId?: string; 
   description: string;
   date: string;
   type: TransactionType;
-  receiptImage?: string; // Base64
-  profit?: number; // Realized profit from sales (Sales Price - Cost)
-  necessityLevel?: 'NECESSITY' | 'NORMAL' | 'LUXURY'; // For Expense Analysis: Basic, Normal, Luxury
+  receiptImage?: string; 
+  profit?: number; 
+  necessityLevel?: 'NECESSITY' | 'NORMAL' | 'LUXURY'; 
   isRecurring?: boolean;
   isExcludedFromBalance?: boolean;
   contactName?: string; // Linked contact
   groupName?: string; // Optional grouping
+  alertReminder?: boolean; // Reminder before due date/time
 }
 
 export interface Debt {
   id: string;
   personName: string;
-  amount: number; // Current outstanding
+  amount: number; 
   initialAmount: number;
   dueDate?: string;
   type: DebtType;
   notes?: string;
-  icon?: string; // Emoji representing the debt reason
-  receiptImage?: string; // Base64 image of invoice/receipt
-  walletId?: string; // Linked wallet if balance was updated
+  icon?: string; 
+  receiptImage?: string; 
+  walletId?: string; 
 }
 
 export interface Investment {
@@ -87,8 +88,8 @@ export interface TelecomPackage {
   id: string;
   provider: 'Yemen Mobile' | 'You' | 'SabaFon' | 'Y' | 'Other' | 'Custom';
   name: string;
-  cost: number; // How much credit it consumes
-  price: number; // Recommended selling price
+  cost: number; 
+  price: number; 
   description?: string;
   isCustom?: boolean;
 }
@@ -101,9 +102,9 @@ export interface DashboardWidget {
 }
 
 export interface ZakatSettings {
-  goldPrice: number; // Per gram in local currency
+  goldPrice: number; 
   lastPaidDate?: string;
-  nisabType: 'GOLD' | 'SILVER'; // Default GOLD
+  nisabType: 'GOLD' | 'SILVER'; 
 }
 
 export interface AppState {

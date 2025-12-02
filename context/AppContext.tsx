@@ -117,7 +117,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const [wallets, setWallets] = useState<Wallet[]>(() => {
     const saved = localStorage.getItem('wallets');
-    // Ensure default wallets include the Debt Ledger if not present
     const loadedWallets = saved ? JSON.parse(saved) : [];
     const hasMain = loadedWallets.some((w: Wallet) => w.type === 'CASH');
     const hasDebt = loadedWallets.some((w: Wallet) => w.type === 'DEBT');
@@ -182,7 +181,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => localStorage.setItem('defaultTransactionType', defaultTransactionType), [defaultTransactionType]);
   useEffect(() => localStorage.setItem('goals', JSON.stringify(goals)), [goals]);
 
-  // Recalculate Wallet Balances
   useEffect(() => {
     setWallets(prevWallets => {
       if (prevWallets.length === 0) return prevWallets;
@@ -190,18 +188,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const mainWalletId = prevWallets.find(w => w.type === 'CASH')?.id || prevWallets[0].id;
       
       return prevWallets.map(w => {
-        // Special logic for DEBT wallet: Balance = (Total Lent - Total Borrowed)
         if (w.type === 'DEBT') {
            const totalLent = debts.filter(d => d.type === DebtType.LENT).reduce((sum, d) => sum + d.amount, 0);
            const totalBorrowed = debts.filter(d => d.type === DebtType.BORROWED).reduce((sum, d) => sum + d.amount, 0);
-           // Positive balance means I have assets (people owe me). Negative means I have liabilities.
            return { ...w, balance: totalLent - totalBorrowed };
         }
 
-        // Standard Logic for Cash/Bank wallets
         const wTrans = transactions.filter(t => {
            if (t.isExcludedFromBalance) return false;
-           // Match wallet ID, or fallback to main wallet if legacy
            if (t.walletId) return t.walletId === w.id;
            return w.id === mainWalletId;
         });
@@ -211,28 +205,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return { ...w, balance: income - expense };
       });
     });
-  }, [transactions, debts]); // Recalculate if transactions OR debts change
+  }, [transactions, debts]);
 
   const addTransaction = (t: Transaction) => {
     const transaction = { ...t, walletId: t.walletId || wallets[0]?.id };
     setTransactions(prev => [transaction, ...prev]);
+    
+    // Auto-save contact if new
+    if (t.contactName && !contacts.find(c => c.name === t.contactName)) {
+        addContact({ id: crypto.randomUUID(), name: t.contactName });
+    }
   };
 
   const addDebt = (d: Debt, updateWallet: boolean = false, walletId?: string) => {
     setDebts(prev => [d, ...prev]);
-    
-    // Auto-add contact
     if (!contacts.find(c => c.name === d.personName)) {
       addContact({ id: crypto.randomUUID(), name: d.personName });
     }
 
     if (updateWallet) {
-      // If updating wallet, we are moving money between Cash/Bank and the Debt Ledger
-      // The selected 'walletId' is the Cash/Bank source.
       const targetWalletId = walletId || wallets.find(w => w.type === 'CASH')?.id || wallets[0].id;
-      
       if (d.type === DebtType.BORROWED) {
-        // I Borrowed money -> Income for my Cash Wallet
         addTransaction({
           id: crypto.randomUUID(),
           amount: d.amount,
@@ -240,10 +233,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           description: `استدانة من ${d.personName} (${d.icon || ''})`,
           category: 'Debt_Inc',
           type: TransactionType.INCOME,
-          walletId: targetWalletId
+          walletId: targetWalletId,
+          contactName: d.personName
         });
       } else {
-        // I Lent money -> Expense from my Cash Wallet
         addTransaction({
           id: crypto.randomUUID(),
           amount: d.amount,
@@ -251,7 +244,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           description: `إقراض لـ ${d.personName} (${d.icon || ''})`,
           category: 'Debt_Exp',
           type: TransactionType.EXPENSE,
-          walletId: targetWalletId
+          walletId: targetWalletId,
+          contactName: d.personName
         });
       }
     }
@@ -355,12 +349,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!fromWallet || !toWallet) return;
 
     const date = new Date().toISOString().split('T')[0];
-    
-    // Ensure "Transfer" categories exist
-    const outCat = categories.find(c => c.id === 'Transfer_Out') ? 'Transfer_Out' : (categories.find(c => c.type === TransactionType.EXPENSE)?.id || 'Other_Exp');
-    const inCat = categories.find(c => c.id === 'Transfer_In') ? 'Transfer_In' : (categories.find(c => c.type === TransactionType.INCOME)?.id || 'Other_Inc');
+    const outCat = categories.find(c => c.id === 'Transfer_Out') ? 'Transfer_Out' : 'Other_Exp';
+    const inCat = categories.find(c => c.id === 'Transfer_In') ? 'Transfer_In' : 'Other_Inc';
 
-    // ATOMIC UPDATE: Add both transactions at once
     const expenseTx: Transaction = {
        id: crypto.randomUUID(),
        amount,
@@ -408,9 +399,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         notes: `شراء/تفعيل ${inv.assetName} (ربح: ${realizedProfit})`,
         dueDate: undefined 
       });
-      // Sale on credit means no cash entered the wallet, so no transaction for cash wallet.
-      // But we might want to record the "Profit" for stats? 
-      // Current design: Credit sales go to Debt Ledger directly.
     } else {
       const catId = categories.find(c => c.label.includes('مبيعات') || c.id === 'Trading')?.id || 'Investment';
       addTransaction({
@@ -420,7 +408,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         date: new Date().toISOString().split('T')[0],
         description: `بيع/تفعيل ${inv.assetName}`,
         type: TransactionType.INCOME,
-        profit: realizedProfit
+        profit: realizedProfit,
+        contactName: buyerName
       });
     }
   };
