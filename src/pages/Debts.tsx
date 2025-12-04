@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { DebtType, Debt } from '../types';
@@ -266,9 +265,12 @@ export const Debts: React.FC = () => {
                 required
                 className="w-full border p-3 rounded-xl outline-none focus:border-primary-500 bg-white dark:bg-gray-700 dark:border-gray-600 font-mono text-lg"
                 value={newDebt.amount || ''}
-                const value = e.target.value;
-const parsedAmount = parseFloat(value);
-const amount = isNaN(parsedAmount) ? 0 : parsedAmount;
+                onChange={e => {
+                  const value = e.target.value;
+                  const parsedAmount = parseFloat(value);
+                  const amount = isNaN(parsedAmount) ? 0 : parsedAmount;
+                  setNewDebt({...newDebt, amount});
+                }}
               />
 
               {/* Wallet Update Toggle */}

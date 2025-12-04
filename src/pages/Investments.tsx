@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Investment, TelecomPackage, TransactionType } from '../types';
@@ -243,21 +242,31 @@ export const Investments: React.FC = () => {
                 <div>
                     <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">الكمية</label>
                     <input 
-                    type="number" placeholder="0" required
-                    className="w-full border p-3 rounded-xl outline-none focus:border-primary-500 bg-white dark:bg-gray-700 dark:border-gray-600"
-                    value={newInv.quantity || ''}
-                    const qtyValue = e.target.value;
-const quantity = parseFloat(qtyValue) || 0;
+                      type="number" 
+                      placeholder="0" 
+                      required
+                      className="w-full border p-3 rounded-xl outline-none focus:border-primary-500 bg-white dark:bg-gray-700 dark:border-gray-600"
+                      value={newInv.quantity || ''}
+                      onChange={e => {
+                        const qtyValue = e.target.value;
+                        const quantity = parseFloat(qtyValue) || 0;
+                        setNewInv({...newInv, quantity});
+                      }}
                     />
                 </div>
                 <div>
                      <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">سعر التكلفة (للوحدة)</label>
                     <input 
-                    type="number" placeholder="1" required
-                    className="w-full border p-3 rounded-xl outline-none focus:border-primary-500 bg-white dark:bg-gray-700 dark:border-gray-600"
-                    value={newInv.avgBuyPrice || ''}
-                    const priceValue = e.target.value;
-const price = parseFloat(priceValue) || 0;
+                      type="number" 
+                      placeholder="1" 
+                      required
+                      className="w-full border p-3 rounded-xl outline-none focus:border-primary-500 bg-white dark:bg-gray-700 dark:border-gray-600"
+                      value={newInv.avgBuyPrice || ''}
+                      onChange={e => {
+                        const priceValue = e.target.value;
+                        const price = parseFloat(priceValue) || 0;
+                        setNewInv({...newInv, avgBuyPrice: price});
+                      }}
                     />
                 </div>
               </div>
