@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Loader2, Image as ImageIcon } from 'lucide-react';
-import { analyzeReceiptImage } from '../services/geminiService';
+import { analyzeReceiptImage } from "../services/geminiService";
 
 interface OCRUploaderProps {
   onScanComplete: (data: { amount: number; date: string; description: string; category: string }) => void;
