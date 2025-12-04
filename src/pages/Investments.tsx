@@ -246,7 +246,8 @@ export const Investments: React.FC = () => {
                     type="number" placeholder="0" required
                     className="w-full border p-3 rounded-xl outline-none focus:border-primary-500 bg-white dark:bg-gray-700 dark:border-gray-600"
                     value={newInv.quantity || ''}
-                    onChange={e => setNewInv({...newInv, quantity: e.target.value})}
+                    const qtyValue = e.target.value;
+const quantity = parseFloat(qtyValue) || 0;
                     />
                 </div>
                 <div>
@@ -255,7 +256,8 @@ export const Investments: React.FC = () => {
                     type="number" placeholder="1" required
                     className="w-full border p-3 rounded-xl outline-none focus:border-primary-500 bg-white dark:bg-gray-700 dark:border-gray-600"
                     value={newInv.avgBuyPrice || ''}
-                    onChange={e => setNewInv({...newInv, avgBuyPrice: e.target.value})}
+                    const priceValue = e.target.value;
+const price = parseFloat(priceValue) || 0;
                     />
                 </div>
               </div>

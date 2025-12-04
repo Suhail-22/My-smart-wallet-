@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { ArrowUp, ArrowDown, Wallet, BellRing, ArrowRight, CreditCard } from 'lucide-react';
-import { generateSmartAlerts } from '../services/offlineAIService';
+import { generateSmartAlerts } from "../services/offlineAIService";
 import { TransactionType } from '../types';
 import { Link } from 'react-router-dom';
 

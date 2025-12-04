@@ -266,7 +266,9 @@ export const Debts: React.FC = () => {
                 required
                 className="w-full border p-3 rounded-xl outline-none focus:border-primary-500 bg-white dark:bg-gray-700 dark:border-gray-600 font-mono text-lg"
                 value={newDebt.amount || ''}
-                onChange={e => setNewDebt({...newDebt, amount: e.target.value})}
+                const value = e.target.value;
+const parsedAmount = parseFloat(value);
+const amount = isNaN(parsedAmount) ? 0 : parsedAmount;
               />
 
               {/* Wallet Update Toggle */}
