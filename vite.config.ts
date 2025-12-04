@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig(({ mode }) => {
+  // تحميل متغيرات البيئة
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
@@ -13,10 +14,12 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      'process.env': env,
+      'process.env': {},
+      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
     },
-    server: {
-      port: 3000,
+    build: {
+      outDir: 'dist',
+      sourcemap: false,
     },
   };
 });
