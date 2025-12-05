@@ -1,57 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Smartphone } from 'lucide-react';
+import { Download } from 'lucide-react';
 
-// تعريف النوع لحدث beforeinstallprompt
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
-}
-
-// تعريف للنافذة الموسعة
 declare global {
-  interface Window {
-    MSStream?: unknown;
+  interface BeforeInstallPromptEvent extends Event {
+    readonly platforms: string[];
+    readonly userChoice: Promise<{
+      outcome: 'accepted' | 'dismissed';
+      platform: string;
+    }>;
+    prompt(): Promise<void>;
   }
 }
 
 const InstallButton: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showButton, setShowButton] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // الكشف عن iOS
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(ios);
-    
-    // الكشف عن تطبيق مثبت
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || 
-                      (window.navigator as any).standalone === true;
-    setIsStandalone(standalone);
-
-    // إذا كان مثبتاً بالفعل، لا تعرض الزر
-    if (standalone) {
-      console.log('التطبيق مثبت بالفعل');
-      return;
-    }
-
-    // استمع لحدث التثبيت (لـ Android/Chrome)
     const handleBeforeInstallPrompt = (e: Event) => {
+      // منع المتصفح من عرض رسالة التثبيت التلقائية
       e.preventDefault();
+      // حفظ الحدث لاستخدامه لاحقًا
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+      // عرض زر التثبيت الخاص بنا
       setShowButton(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // إذا كان iOS ولم يكن مثبتاً، اعرض الزر بعد تأخير
-    if (ios && !standalone) {
-      setTimeout(() => setShowButton(true), 3000);
+    // تحقق مما إذا كان التطبيق مثبتًا بالفعل
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        (window.navigator as any).standalone;
+    
+    if (isStandalone) {
+      setShowButton(false);
     }
 
     return () => {
@@ -60,37 +42,18 @@ const InstallButton: React.FC = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    if (isIOS) {
-      // إرشادات تثبيت iOS
-      alert(`
-📱 تثبيت التطبيق على iPhone/iPad:
-
-1. انقر على زر المشاركة (⏍) في Safari
-2. مرر لأسفل واختر "أضف إلى الشاشة الرئيسية"
-3. انقر على "إضافة"
-
-بعد التثبيت، سيكون التطبيق متاحاً على الشاشة الرئيسية.
-      `);
-      return;
-    }
-
     if (deferredPrompt) {
-      try {
-        await deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        
-        if (outcome === 'accepted') {
-          console.log('تم قبول التثبيت');
-          setShowButton(false);
-          setDeferredPrompt(null);
-        }
-      } catch (error) {
-        console.error('حدث خطأ أثناء التثبيت:', error);
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('تم تثبيت التطبيق');
+        setDeferredPrompt(null);
+        setShowButton(false);
       }
     }
   };
 
-  if (!showButton || isStandalone) return null;
+  if (!showButton) return null;
 
   return (
     <button
