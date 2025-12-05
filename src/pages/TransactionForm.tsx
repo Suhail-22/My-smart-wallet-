@@ -5,8 +5,7 @@ import { TransactionType, Category, DebtType } from '../types';
 import { 
   ArrowLeft, X, ArrowDownCircle, ArrowUpCircle, Handshake,
   PlusCircle, MinusCircle, DollarSign,
-  Users, Phone, // <-- تم إضافة أيقونة الهاتف
-  AlignLeft, Calendar 
+  Users, Phone, AlignLeft, Calendar 
 } from 'lucide-react';
 import { ContactPicker } from '../components/ContactPicker';
 
@@ -35,7 +34,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
     type: defaultTransactionType, 
     walletId: wallets[0]?.id || '',
     contactName: '',
-    contactPhone: '', // <-- تم إضافة رقم الهاتف
+    contactPhone: '',
     receiptImage: undefined as string | undefined, 
     isExcludedFromBalance: false,
     debtType: DebtType.BORROWED as DebtType, 
@@ -58,7 +57,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
     if (!transactionType || !formData.amount) return;
     
     if (transactionType === 'debt') {
-      // يمكنك لاحقًا إضافة منطق خاص للديون
       console.log("Saving Debt:", formData);
     }
     
@@ -66,12 +64,12 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
       id: crypto.randomUUID(),
       amount: Number(formData.amount),
       type: transactionType as TransactionType,
-      category: formData.category, 
+      category: formData.category,
       description: formData.description,
       date: formData.date,
       walletId: formData.walletId,
       contactName: formData.contactName,
-      contactPhone: formData.contactPhone, // <-- حفظ رقم الهاتف
+      contactPhone: formData.contactPhone,
       receiptImage: formData.receiptImage, 
       isExcludedFromBalance: formData.isExcludedFromBalance,
       profit: undefined, 
@@ -81,7 +79,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
     onClose(); 
   };
 
-  // === شاشة اختيار النوع ===
   if (!transactionType) {
     return (
       <div className="p-2">
@@ -126,7 +123,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                 transactionType === 'EXPENSE' ? 'إضافة مصروف جديد' : 'تسجيل دين'; 
   const typeColor = transactionType === 'INCOME' ? 'bg-emerald-500 shadow-emerald-500/50' : 
                     transactionType === 'EXPENSE' ? 'bg-red-500 shadow-red-500/50' : 'bg-blue-500 shadow-blue-500/50';
-  const categoryOptions = categories.filter(c => c.type === transactionType);
 
   return (
     <div className="flex flex-col h-full">
@@ -144,7 +140,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
       </div>
 
       <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto space-y-4 pb-20">
-        {/* المبلغ */}
         <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
           <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">المبلغ</label>
           <div className="flex items-center">
@@ -161,7 +156,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
         </div>
 
         <div className="space-y-4">
-          {/* المحفظة */}
           <label className="block">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">المحفظة / الحساب</span>
             <select
@@ -174,7 +168,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             </select>
           </label>
 
-          {/* التصنيف */}
           {transactionType !== 'debt' && (
             <label className="block">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">التصنيف</span>
@@ -185,14 +178,21 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                 className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">-- اختر تصنيفاً --</option>
-                {categories.filter(c => c.type === transactionType).map(c => (
-                  <option key={c.id} value={c.id}>{c.label}</option>
-                ))}
+                {(() => {
+                  const renderOptions = (cats: any[], level = 0) => {
+                    return cats.map(cat => [
+                      <option key={cat.id} value={cat.id} style={{ paddingLeft: `${level * 16}px` }}>
+                        {cat.icon} {cat.label}
+                      </option>,
+                      ...(cat.children ? renderOptions(cat.children, level + 1) : [])
+                    ]).flat();
+                  };
+                  return renderOptions(categories.filter(c => c.type === transactionType));
+                })()}
               </select>
             </label>
           )}
 
-          {/* الطرف المقابل + رمز الاتصال */}
           {(transactionType === 'debt' || transactionType === 'EXPENSE') && (
             <label className="block">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">الطرف المقابل</span>
@@ -216,7 +216,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             </label>
           )}
 
-          {/* حقول الدين */}
           {transactionType === 'debt' && (
             <>
               <label className="block">
@@ -260,7 +259,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             </>
           )}
 
-          {/* الوصف */}
           <label className="block">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">الوصف / ملاحظات</span>
             <input
@@ -272,7 +270,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             />
           </label>
 
-          {/* التاريخ */}
           <label className="block">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">التاريخ</span>
             <input
@@ -284,7 +281,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             />
           </label>
 
-          {/* الصورة */}
           <label className="block pt-2">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">سند/صورة المعاملة (اختياري)</span>
             <input 
@@ -307,7 +303,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             )}
           </label>
 
-          {/* عدم التأثير على الرصيد */}
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-1">
               <span className="text-gray-600 dark:text-gray-300 font-bold">عدم التأثير على الرصيد</span>
@@ -322,7 +317,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
           </div>
         </div>
 
-        {/* زر الحفظ */}
         <div className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto p-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 z-50">
           <button 
             type="submit"
