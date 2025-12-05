@@ -2,9 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-// حل لمشكلة __dirname في ES modules
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
-
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -13,9 +10,9 @@ export default defineConfig({
     },
   },
   define: {
-    'process.env': {},
-    'import.meta.env.PROD': JSON.stringify(process.env.NODE_ENV === 'production'),
-    'import.meta.env.DEV': JSON.stringify(process.env.NODE_ENV === 'development'),
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+    'import.meta.env.PROD': process.env.NODE_ENV === 'production',
+    'import.meta.env.DEV': process.env.NODE_ENV === 'development',
   },
   build: {
     outDir: 'dist',
