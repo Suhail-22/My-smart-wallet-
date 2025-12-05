@@ -76,8 +76,8 @@ aside::-webkit-scrollbar {
 }
 
 /* ====== تحسينات للظلال ====== */
-.shadow-2xl {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 /* ====== تحسينات للحركة ====== */
@@ -94,27 +94,6 @@ body {
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 }
 
-/* ====== تحسينات للجداول والقوائم ====== */
-table {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-/* ====== تحسينات للصور ====== */
-img {
-  max-width: 100%;
-  height: auto;
-}
-
-/* ====== تحسينات للأشكال الهندسية ====== */
-.rounded-xl {
-  border-radius: 0.75rem;
-}
-
-.rounded-lg {
-  border-radius: 0.5rem;
-}
-
 /* ====== منع التمرير الأفقي ====== */
 body, html {
   max-width: 100%;
@@ -122,10 +101,8 @@ body, html {
 }
 
 /* ====== تحسينات للوضع الليلي ====== */
-@media (prefers-color-scheme: dark) {
-  .dark\:bg-dark-900 {
-    background-color: #0f172a;
-  }
+.dark {
+  color-scheme: dark;
 }
 
 /* ====== تحسينات للرسوم المتحركة ====== */
@@ -136,16 +113,6 @@ body, html {
 
 .fade-in {
   animation: fadeIn 0.3s ease-in-out;
-}
-
-/* ====== تحسينات للبطاقات ====== */
-.card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 /* ====== تحسينات للنماذج ====== */
@@ -171,4 +138,15 @@ input:focus, select:focus, textarea:focus {
 .dark input:focus, .dark select:focus, .dark textarea:focus {
   border-color: #0ea5e9;
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+}
+
+/* ====== تحسينات خاصة للشريط الجانبي ====== */
+@media (max-width: 768px) {
+  .mobile-header {
+    height: 64px;
+  }
+  
+  .sidebar-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+  }
 }
