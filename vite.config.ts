@@ -9,11 +9,15 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  define: {
-    // حقن المتغيرات البيئية بشكل آمن
-    'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(process.env.VITE_GEMINI_API_KEY || ''),
-  },
-  server: {
-    port: 3000,
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+        },
+      },
+    },
   },
 });
