@@ -1,48 +1,62 @@
-// geminiService.ts - بدون استخدام @google/genai
-export async function analyzeReceiptImage(imageBase64: string): Promise<string> {
-  const apiKey = process.env.VITE_GEMINI_API_KEY;
-  
-  if (!apiKey) {
-    throw new Error('Gemini API key is not configured');
-  }
+// هذا الملف سيكون متاحاً عندما تضيف مفتاح API من Google Gemini
+// يمكنك الحصول على المفتاح من: https://makersuite.google.com/app/apikey
 
-  const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent';
-  
-  const requestBody = {
-    contents: [
-      {
-        parts: [
-          {
-            text: "Extract the total amount, date, and merchant name from this receipt. Return the data in JSON format with keys: total, date, merchant."
-          },
-          {
-            inline_data: {
-              mime_type: "image/jpeg",
-              data: imageBase64
-            }
-          }
-        ]
-      }
-    ]
-  };
+interface GeminiAnalysisResult {
+  amount: number;
+  date: string;
+  description: string;
+  category: string;
+}
 
+export const analyzeReceiptImage = async (base64Image: string): Promise<GeminiAnalysisResult | null> => {
   try {
-    const response = await fetch(`${apiUrl}?key=${apiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
+    // تحقق من وجود مفتاح API
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      console.warn('Gemini API key is not configured');
+      return null;
+    }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: "قم بتحليل صورة الإيصال واعطيني البيانات التالية بتنسيق JSON: المبلغ، التاريخ، الوصف، والفئة. الفئات المتاحة: الطعام، التسوق، الفواتير، المواصلات، الصحة، الترفيه، المنزل، التعليم، أخرى." },
+              {
+                inline_data: {
+                  mime_type: "image/jpeg",
+                  data: base64Image
+                }
+              }
+            ]
+          }]
+        })
+      }
+    );
 
     if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    return data.candidates[0].content.parts[0].text;
+    const text = data.candidates[0].content.parts[0].text;
+    
+    // استخراج JSON من النص
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    
+    return null;
   } catch (error) {
-    console.error('Error analyzing receipt:', error);
-    throw error;
+    console.error('Error calling Gemini API:', error);
+    return null;
   }
-}
+};
