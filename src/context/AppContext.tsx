@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Transaction, TransactionType, Wallet, WalletType, Category, Debt, DebtType } from '../types';
 
-// === القيم الافتراضية ===
 const initialWallets: Wallet[] = [
   { id: 'main-cash', name: 'الكاش', type: 'CASH', balance: 0, currency: 'YER', color: '#6366f1' },
   { id: 'bank-01', name: 'البنك', type: 'BANK', balance: 0, currency: 'YER', color: '#10b981' },
@@ -28,15 +27,12 @@ const initialCategories: Category[] = [
 const initialTransactions: Transaction[] = [];
 const initialDebts: Debt[] = [];
 
-// === إنشاء السياق ===
 interface AppContextType {
-  // المعاملات
   transactions: Transaction[];
   addTransaction: (tx: Transaction) => void;
   updateTransaction: (id: string, updatedData: Partial<Transaction>) => void;
   deleteTransaction: (id: string) => void;
 
-  // الديون
   debts: Debt[];
   addDebt: (debt: Debt, updateWallet: boolean, walletId: string) => void;
   updateDebt: (id: string, updatedData: Partial<Debt>) => void;
@@ -44,20 +40,17 @@ interface AppContextType {
   settleDebtThirdParty: (debtId: string, thirdParty: string) => void;
   transferDebt: (fromDebtId: string, toPerson: string, amount: number, notes?: string, receiptImage?: string) => void;
 
-  // المحافظ
   wallets: Wallet[];
   addWallet: (wallet: Omit<Wallet, 'id'>) => void;
   updateWallet: (id: string, updatedData: Partial<Wallet>) => void;
   deleteWallet: (id: string) => void;
 
-  // التصنيفات (الرموز الهرمية)
   categories: Category[];
   addCategory: (category: Omit<Category, 'id'>) => void;
   addSubcategory: (parentId: string, subcategory: Omit<Category, 'id'>) => void;
   updateCategory: (id: string, updatedData: Partial<Category>) => void;
   deleteCategory: (id: string) => void;
 
-  // الإعدادات
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
   currency: string;
@@ -66,9 +59,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// === مزود السياق ===
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // === الحالة ===
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [debts, setDebts] = useState<Debt[]>(initialDebts);
@@ -78,10 +69,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const currency = 'YER';
   const defaultTransactionType: TransactionType = 'EXPENSE';
 
-  // === المعاملات ===
   const addTransaction = (tx: Transaction) => {
     setTransactions(prev => [...prev, tx]);
-    // تحديث رصيد المحفظة
     if (!tx.isExcludedFromBalance) {
       setWallets(prev =>
         prev.map(w =>
@@ -99,15 +88,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (tx.id === id) {
           const oldTx = tx;
           const newTx = { ...tx, ...updatedData };
-
-          // إذا تغيّر المحفظة أو النوع أو المبلغ، نُعدّل الرصيد
           if (
             oldTx.walletId !== newTx.walletId ||
             oldTx.type !== newTx.type ||
             oldTx.amount !== newTx.amount ||
             oldTx.isExcludedFromBalance !== newTx.isExcludedFromBalance
           ) {
-            // إلغاء التأثير القديم
             if (!oldTx.isExcludedFromBalance) {
               setWallets(w =>
                 w.map(w =>
@@ -117,7 +103,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 )
               );
             }
-            // تطبيق التأثير الجديد
             if (!newTx.isExcludedFromBalance) {
               setWallets(w =>
                 w.map(w =>
@@ -149,7 +134,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setTransactions(prev => prev.filter(t => t.id !== id));
   };
 
-  // === الديون ===
   const addDebt = (debt: Debt, updateWallet: boolean, walletId: string) => {
     setDebts(prev => [...prev, debt]);
     if (updateWallet) {
@@ -166,14 +150,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setDebts(prev =>
       prev.map(debt => {
         if (debt.id === id) {
-          const oldDebt = debt;
-          const newDebt = { ...debt, ...updatedData };
-
-          // تحديث المحفظة إذا تغيّر المبلغ أو النوع
-          if (oldDebt.amount !== newDebt.amount || oldDebt.type !== newDebt.type) {
-            // لا نُعدّل تلقائيًا هنا — نتركه للمستخدم (أو نضيف خيارًا لاحقًا)
-          }
-          return newDebt;
+          return { ...debt, ...updatedData };
         }
         return debt;
       })
@@ -204,18 +181,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (!fromDebt) return prev;
 
       const newDebts = [...prev];
-
-      // 1. خصم المبلغ من الدين الأصلي
       const updatedFromDebt = {
         ...fromDebt,
-        amount: fromDebt.amount - amount,
+        amount: Math.max(0, fromDebt.amount - amount),
       };
       if (updatedFromDebt.amount <= 0) {
-        updatedFromDebt.amount = 0;
         updatedFromDebt.isSettled = true;
       }
 
-      // 2. إنشاء دين جديد للشخص المستقبل
       const newDebt: Debt = {
         id: crypto.randomUUID(),
         personName: toPerson,
@@ -230,16 +203,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         isSettled: false,
       };
 
-      // 3. تحديث المصفوفة
       const index = newDebts.findIndex(d => d.id === fromDebtId);
       newDebts[index] = updatedFromDebt;
       newDebts.push(newDebt);
-
       return newDebts;
     });
   };
 
-  // === المحافظ ===
   const addWallet = (wallet: Omit<Wallet, 'id'>) => {
     setWallets(prev => [...prev, { ...wallet, id: crypto.randomUUID() }]);
   };
@@ -252,7 +222,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setWallets(prev => prev.filter(w => w.id !== id));
   };
 
-  // === التصنيفات الهرمية ===
   const addCategory = (category: Omit<Category, 'id'>) => {
     setCategories(prev => [...prev, { ...category, id: crypto.randomUUID() }]);
   };
@@ -294,7 +263,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setCategories(prev => remove(prev));
   };
 
-  // === القيمة المرسلة للسياق ===
   const value: AppContextType = {
     transactions,
     addTransaction,
@@ -328,7 +296,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
-// === Hook مخصص ===
 export const useApp = () => {
   const context = useContext(AppContext);
   if (!context) throw new Error('useApp must be used within an AppProvider');
