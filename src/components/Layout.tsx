@@ -1,183 +1,157 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { 
-  Home, 
-  PlusCircle, 
-  CreditCard, 
-  TrendingUp, 
-  Settings, 
-  Calendar,
-  Wallet,
-  PieChart,
-  Moon,
-  Sun,
-  Menu,
-  X,
-  Target
-} from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import InstallButton from './InstallButton';
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { MdOutlineDashboard, MdOutlineAccountBalanceWallet, MdCreditCard, MdOutlineTimeline, MdOutlineTrendingUp, MdOutlineCalculate, MdOutlineSettings, MdDarkMode, MdLightMode, MdInstallDesktop, MdAdd, MdMenu, MdClose, MdExitToApp, MdOutlineMenuBook, MdOutlinePeople } from "react-icons/md";
+import InstallButton from "./InstallButton";
+import TransactionForm from "../pages/TransactionForm"; // تأكد من المسار الصحيح
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { theme, setTheme } = useApp();
-  const location = useLocation();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const location = useLocation();
+    const navigate = useNavigate();
 
-  // كشف حجم الشاشة
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    // حالة التحكم في الثيم (Theme)
+    const [theme, setTheme] = useState(
+        localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    );
+
+    // *** إضافة حالة لفتح وإغلاق نموذج المعاملة (FAB Modal) ***
+    const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
+
+    const toggleTheme = () => {
+        setTheme(prevTheme => (prevTheme === "light" ? "dark" : "light"));
     };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
-  // إغلاق الشريط الجانبي عند تغيير الصفحة على الجوال
-  useEffect(() => {
-    if (isMobile && isSidebarOpen) {
-      setIsSidebarOpen(false);
-    }
-  }, [location.pathname, isMobile, isSidebarOpen]);
+    useEffect(() => {
+        if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+        }
+        localStorage.setItem("theme", theme);
+    }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
+    const handleNavigation = (path: string) => {
+        navigate(path);
+        setIsSidebarOpen(false);
+    };
 
-  const menuItems = [
-    { path: '/', label: 'الرئيسية', icon: <Home size={20} /> },
-    { path: '/add', label: 'إضافة معاملة', icon: <PlusCircle size={20} /> },
-    { path: '/transactions', label: 'المعاملات', icon: <CreditCard size={20} /> },
-    { path: '/budget', label: 'الميزانية', icon: <PieChart size={20} /> },
-    { path: '/wallets', label: 'المحافظ', icon: <Wallet size={20} /> },
-    { path: '/debts', label: 'الديون', icon: <Calendar size={20} /> },
-    { path: '/investments', label: 'الاستثمارات', icon: <TrendingUp size={20} /> },
-    { path: '/zakat', label: 'الزكاة', icon: <Target size={20} /> },
-    { path: '/settings', label: 'الإعدادات', icon: <Settings size={20} /> },
-  ];
+    const navItems = [
+        { path: "/", icon: MdOutlineDashboard, label: "الرئيسية" },
+        { path: "/transaction-form", icon: MdAdd, label: "إضافة معاملة" }, // هذا الخيار في القائمة الجانبية يمكن أن يبقى أو يحذف
+        { path: "/transactions", icon: MdOutlineTimeline, label: "المعاملات" },
+        { path: "/budget", icon: MdOutlineCalculate, label: "الميزانية" },
+        { path: "/wallets", icon: MdOutlineAccountBalanceWallet, label: "المحافظ" },
+        { path: "/debts", icon: MdCreditCard, label: "الديون" },
+        { path: "/investments", icon: MdOutlineTrendingUp, label: "الاستثمارات" },
+        { path: "/zakat", icon: MdOutlineMenuBook, label: "الزكاة" },
+        { path: "/settings", icon: MdOutlineSettings, label: "الإعدادات" },
+    ];
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-dark-900 text-gray-800 dark:text-dark-200 flex flex-col md:flex-row">
-      {/* زر القائمة للجوال */}
-      <button
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-3 bg-primary-600 text-white rounded-full shadow-xl"
-        aria-label="فتح القائمة"
-      >
-        {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-
-      {/* شريط عنوان للجوال */}
-      <div className="md:hidden fixed top-0 right-0 left-0 z-40 bg-white dark:bg-dark-800 border-b border-gray-200 dark:border-dark-700 p-4 flex items-center justify-center shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-            <Wallet className="text-white" size={18} />
-          </div>
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">محفظتي الذكية</h1>
-        </div>
-      </div>
-
-      {/* الشريط الجانبي */}
-      <aside className={`
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        fixed md:relative
-        top-0 bottom-0
-        w-64 md:w-56 h-full
-        bg-white dark:bg-dark-800
-        shadow-xl md:shadow-none
-        z-40
-        transition-transform duration-300 ease-in-out
-        flex flex-col
-        mt-16 md:mt-0
-      `}>
-        {/* رأس الشريط الجانبي (للشاشات الكبيرة) */}
-        <div className="hidden md:flex p-6 border-b border-gray-200 dark:border-dark-700">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
-              <Wallet className="text-white" size={24} />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">محفظتي الذكية</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">إدارة مالية ذكية</p>
-            </div>
-          </div>
-        </div>
-
-        {/* قائمة التنقل */}
-        <nav className="flex-1 p-4 overflow-y-auto">
-          <ul className="space-y-2">
-            {menuItems.map((item) => (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  onClick={() => {
-                    if (isMobile) setIsSidebarOpen(false);
-                  }}
-                  className={`
-                    flex items-center gap-3 p-3 rounded-lg transition-colors
-                    ${location.pathname === item.path
-                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700'
-                    }
-                  `}
+    return (
+        <div className={`flex flex-col h-screen max-w-lg mx-auto overflow-hidden ${theme === "dark" ? "dark" : ""}`}>
+            {/* Header / Top Bar */}
+            <header className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 shadow-md">
+                <button
+                    onClick={() => setIsSidebarOpen(true)}
+                    className="text-gray-700 dark:text-gray-200"
                 >
-                  {item.icon}
-                  <span className="font-medium">{item.label}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+                    <MdMenu size={24} />
+                </button>
+                <h1 className="text-xl font-bold text-gray-800 dark:text-white">محفظتي الذكية</h1>
+                <InstallButton />
+            </header>
 
-        {/* تذييل الشريط الجانبي */}
-        <div className="p-4 border-t border-gray-200 dark:border-dark-700">
-          <button
-            onClick={toggleTheme}
-            className="flex items-center justify-center gap-2 w-full p-3 rounded-lg bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 transition-colors"
-          >
-            {theme === 'dark' ? (
-              <>
-                <Sun size={20} className="text-yellow-500" />
-                <span className="font-medium">الوضع النهاري</span>
-              </>
-            ) : (
-              <>
-                <Moon size={20} className="text-blue-400" />
-                <span className="font-medium">الوضع الليلي</span>
-              </>
+            {/* Sidebar / Menu */}
+            <aside
+                className={`fixed inset-y-0 right-0 z-[100] w-64 bg-white dark:bg-gray-900 shadow-lg transform transition-transform ${isSidebarOpen ? "translate-x-0" : "translate-x-full"
+                    } md:hidden`}
+            >
+                <div className="p-4 flex flex-col h-full">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">القائمة</h2>
+                        <button
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="text-gray-700 dark:text-gray-200"
+                        >
+                            <MdClose size={24} />
+                        </button>
+                    </div>
+                    <nav className="flex-grow">
+                        <ul>
+                            {navItems.map((item) => (
+                                <li key={item.path} className="mb-2">
+                                    <button
+                                        onClick={() => handleNavigation(item.path)}
+                                        className={`flex items-center w-full p-2 rounded-lg transition-colors ${location.pathname === item.path
+                                                ? "bg-indigo-500 text-white"
+                                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                            }`}
+                                    >
+                                        <item.icon size={20} className="ml-3" />
+                                        {item.label}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+
+                    <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <button
+                            onClick={toggleTheme}
+                            className="flex items-center w-full p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                            {theme === "light" ? (
+                                <MdDarkMode size={20} className="ml-3" />
+                            ) : (
+                                <MdLightMode size={20} className="ml-3" />
+                            )}
+                            {theme === "light" ? "الوضع الداكن" : "الوضع الفاتح"}
+                        </button>
+                        <button
+                            onClick={() => console.log("Logout")} // تحتاج لتعريف دالة الخروج
+                            className="flex items-center w-full p-2 mt-2 rounded-lg text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50"
+                        >
+                            <MdExitToApp size={20} className="ml-3" />
+                            تسجيل الخروج
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            {/* Main Content Area */}
+            <main className="flex-grow overflow-y-auto bg-gray-50 dark:bg-gray-800">
+                {children}
+            </main>
+
+            {/* *** الزر العائم (Floating Action Button - FAB) *** */}
+            <button
+                className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-green-500 text-white rounded-full p-4 shadow-xl z-50 transition-all hover:bg-green-600 active:scale-95 md:bottom-8"
+                onClick={() => setIsTransactionFormOpen(true)}
+                aria-label="Add Transaction"
+            >
+                <MdAdd size={30} />
+            </button>
+
+            {/* Footer / Bottom Navigation (إذا كانت موجودة في تصميمك الأصلي) */}
+            {/* يمكنك إضافة مكون شريط التنقل السفلي هنا إذا كنت تستخدمه */}
+
+            {/* *** نافذة نموذج المعاملة المنبثقة (Modal) *** */}
+            {isTransactionFormOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center p-4 transition-opacity duration-300">
+                    <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-sm max-h-[90vh] overflow-y-auto relative p-6">
+                        <button
+                            className="absolute top-3 left-3 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+                            onClick={() => setIsTransactionFormOpen(false)}
+                        >
+                            <MdClose size={24} />
+                        </button>
+                        {/* هنا نضع مكون نموذج المعاملة الذي سيتم تعديله في الخطوة التالية */}
+                        <TransactionForm onClose={() => setIsTransactionFormOpen(false)} />
+                    </div>
+                </div>
             )}
-          </button>
-          
-          <div className="mt-4 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              الإصدار 1.0.0
-            </p>
-          </div>
         </div>
-      </aside>
-
-      {/* المحتوى الرئيسي */}
-      <main className="flex-1 overflow-y-auto pt-16 md:pt-0">
-        {/* غطاء شفاف لإغلاق الشريط الجانبي على الجوال */}
-        {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
-        
-        <div className="p-4 md:p-6 max-w-7xl mx-auto">
-          {children || <Outlet />}
-        </div>
-      </main>
-
-      {/* زر التثبيت */}
-      <InstallButton />
-    </div>
-  );
+    );
 };
 
 export default Layout;
