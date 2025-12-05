@@ -18,9 +18,13 @@ import { useApp } from '../context/AppContext';
 import InstallButton from './InstallButton';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { theme, toggleTheme } = useApp();
+  const { theme, setTheme } = useApp(); // تغيير toggleTheme إلى setTheme
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   const menuItems = [
     { path: '/', label: 'الرئيسية', icon: <Home size={20} /> },
@@ -132,7 +136,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
       </main>
 
-      {/* زر التثبيت الإضافي - فقط نضيف هذا السطر */}
+      {/* زر التثبيت */}
       <InstallButton />
     </div>
   );
