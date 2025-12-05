@@ -3,31 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="تطبيق مالي شامل لإدارة المصروفات، الاستثمار، والديون مع دعم الذكاء الاصطناعي">
-  <meta name="theme-color" content="#0ea5e9" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="محفظتي الذكية">
+  
+  <!-- PWA Meta Tags -->
   <meta name="application-name" content="محفظتي الذكية">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="المحفظة">
+  <meta name="description" content="تطبيق مالي شامل لإدارة المصروفات والديون والاستثمارات">
+  <meta name="format-detection" content="telephone=no">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="msapplication-TileColor" content="#0ea5e9">
   <meta name="msapplication-tap-highlight" content="no">
+  <meta name="theme-color" content="#0ea5e9">
   
   <title>محفظتي الذكية</title>
   
-  <!-- PWA Manifest -->
+  <!-- Manifest -->
   <link rel="manifest" href="/manifest.json" />
   
-  <!-- Apple Touch Icons -->
+  <!-- Icons -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/icon-192x192.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="/icon-152x152.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/icon-192x192.png">
-  <link rel="apple-touch-icon" sizes="167x167" href="/icon-192x192.png">
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png">
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -64,12 +61,37 @@
         }
       }
     }
+    
+    // PWA Installation Detection
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').then(
+          function(registration) {
+            console.log('ServiceWorker registration successful');
+          },
+          function(err) {
+            console.log('ServiceWorker registration failed: ', err);
+          }
+        );
+      });
+    }
+    
+    // Detect if app is already installed
+    window.addEventListener('DOMContentLoaded', () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                          window.navigator.standalone;
+      
+      if (isStandalone) {
+        console.log('Running in standalone PWA mode');
+      }
+    });
   </script>
   
   <style>
     body {
       font-family: 'Tajawal', sans-serif;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .no-scrollbar::-webkit-scrollbar {
       display: none;
@@ -78,112 +100,19 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
-    /* تحسين اللمس على الأجهزة المحمولة */
+    /* تحسين اللمس على الجوال */
+    button, a {
+      -webkit-tap-highlight-color: transparent;
+    }
     @media (max-width: 768px) {
-      button, a {
-        min-height: 44px;
-        min-width: 44px;
+      button, a, input, select {
+        font-size: 16px; /* منع التكبير في iOS */
       }
     }
   </style>
 </head>
 <body class="bg-gray-50 dark:bg-dark-900 text-gray-800 dark:text-dark-200">
   <div id="root"></div>
-  
-  <!-- PWA Installation Prompt Script -->
-  <script>
-    // الكشف عن متصفحات iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    
-    // الكشف عن Chrome/Android
-    const isAndroid = /Android/.test(navigator.userAgent);
-    
-    // التعامل مع حدث beforeinstallprompt
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // منع المتصفح من عرض الإشعار التلقائي
-      e.preventDefault();
-      // تخزين الحدث للاستخدام لاحقاً
-      deferredPrompt = e;
-      
-      // عرض زر تثبيت مخصص في التطبيق
-      const installButton = document.createElement('button');
-      installButton.id = 'installButton';
-      installButton.innerHTML = '📲 تثبيت التطبيق';
-      installButton.className = 'fixed bottom-4 left-4 z-50 bg-primary-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-primary-700 transition';
-      installButton.style.display = 'none';
-      
-      document.body.appendChild(installButton);
-      
-      // عرض الزر بعد تحميل React
-      setTimeout(() => {
-        const root = document.getElementById('root');
-        if (root && root.children.length > 0) {
-          installButton.style.display = 'block';
-        }
-      }, 3000);
-      
-      // عند النقر على زر التثبيت
-      installButton.addEventListener('click', async () => {
-        // إخفاء الزر
-        installButton.style.display = 'none';
-        
-        // عرض نافذة التثبيت
-        deferredPrompt.prompt();
-        
-        // انتظار اختيار المستخدم
-        const { outcome } = await deferredPrompt.userChoice;
-        
-        if (outcome === 'accepted') {
-          console.log('تم تثبيت التطبيق بنجاح');
-        } else {
-          console.log('تم رفض تثبيت التطبيق');
-        }
-        
-        deferredPrompt = null;
-      });
-    });
-    
-    // إرشادات تثبيت iOS
-    if (isIOS) {
-      window.addEventListener('load', () => {
-        const isStandalone = window.navigator.standalone;
-        const isSafari = /Safari/.test(navigator.userAgent);
-        
-        if (!isStandalone && isSafari) {
-          // عرض إرشادات تثبيت iOS
-          setTimeout(() => {
-            const iosInstallGuide = document.createElement('div');
-            iosInstallGuide.id = 'iosInstallGuide';
-            iosInstallGuide.innerHTML = `
-              <div class="fixed bottom-4 left-4 right-4 z-50 bg-dark-800 text-white p-4 rounded-lg shadow-xl">
-                <div class="flex justify-between items-center">
-                  <div>
-                    <h3 class="font-bold">📱 تثبيت التطبيق</h3>
-                    <p class="text-sm mt-1">للتثبيت: انقر على زر المشاركة ثم "أضف إلى الشاشة الرئيسية"</p>
-                  </div>
-                  <button id="closeGuide" class="text-gray-400 hover:text-white">✕</button>
-                </div>
-              </div>
-            `;
-            document.body.appendChild(iosInstallGuide);
-            
-            document.getElementById('closeGuide').addEventListener('click', () => {
-              iosInstallGuide.remove();
-            });
-            
-            // إخفاء الإرشادات بعد 10 ثواني
-            setTimeout(() => {
-              if (iosInstallGuide.parentNode) {
-                iosInstallGuide.remove();
-              }
-            }, 10000);
-          }, 5000);
-        }
-      });
-    }
-  </script>
-  
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
