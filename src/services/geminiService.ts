@@ -1,52 +1,48 @@
-// src/services/geminiService.ts
-
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-
-// Fallback إذا لم يكن Gemini متاحًا
-const isGeminiAvailable = API_KEY && typeof window !== 'undefined';
-
-export async function getFinancialAdvice(prompt: string): Promise<string> {
-  if (!isGeminiAvailable) {
-    // إرجاع نص بديل إذا لم يكن Gemini متاحًا
-    return "نصيحة مالية ذكية: حاول توفير 20% من دخلك وادفع ديونك فورًا.";
+// geminiService.ts - بدون استخدام @google/genai
+export async function analyzeReceiptImage(imageBase64: string): Promise<string> {
+  const apiKey = process.env.VITE_GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('Gemini API key is not configured');
   }
+
+  const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent';
+  
+  const requestBody = {
+    contents: [
+      {
+        parts: [
+          {
+            text: "Extract the total amount, date, and merchant name from this receipt. Return the data in JSON format with keys: total, date, merchant."
+          },
+          {
+            inline_data: {
+              mime_type: "image/jpeg",
+              data: imageBase64
+            }
+          }
+        ]
+      }
+    ]
+  };
 
   try {
-    // استيراد ديناميكي لتجنب مشاكل التحزيم
-    const { GoogleGenerativeAI } = await import('@google/genai');
-    const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    const response = await fetch(`${apiUrl}?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
   } catch (error) {
-    console.error('Error calling Gemini API:', error);
-    return "عذرًا، حدث خطأ في الحصول على النصيحة المالية. حاول مرة أخرى لاحقًا.";
+    console.error('Error analyzing receipt:', error);
+    throw error;
   }
-}
-
-export async function analyzeSpendingPattern(transactions: any[]): Promise<string> {
-  const prompt = `
-    تحليل الأنماط المالية:
-    ${JSON.stringify(transactions.slice(0, 10))}
-    
-    قدم تحليلًا باللغة العربية عن:
-    1. أبرز أنماط الصرف
-    2. نصائح للتحسين
-    3. فرص التوفير
-  `;
-  
-  return getFinancialAdvice(prompt);
-}
-
-export async function getInvestmentAdvice(investments: any[]): Promise<string> {
-  const prompt = `
-    تحليل استثماري:
-    ${JSON.stringify(investments)}
-    
-    قدم نصائح استثمارية باللغة العربية.
-  `;
-  
-  return getFinancialAdvice(prompt);
 }
