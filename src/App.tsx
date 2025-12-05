@@ -3,14 +3,16 @@ import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import Layout from './components/Layout';
-import { Dashboard } from './pages/Dashboard';
-import { Debts } from './pages/Debts';
-import { Investments } from './pages/Investments';
-import { Settings } from './pages/Settings';
-import { Zakat } from './pages/Zakat';
-import { Transactions } from './pages/Transactions';
-import { Wallets } from './pages/Wallets';
-import { Budget } from './pages/Budget';
+import Dashboard from './pages/Dashboard';
+import Debts from './pages/Debts';
+import Investments from './pages/Investments';
+import Settings from './pages/Settings';
+import Zakat from './pages/Zakat';
+import Transactions from './pages/Transactions';
+import Wallets from './pages/Wallets';
+import Budget from './pages/Budget';
+import CategoriesManager from './pages/CategoriesManager'; // <-- إضافة الصفحة الجديدة
+import TransactionForm from './pages/TransactionForm';
 
 const App: React.FC = () => {
   return (
@@ -26,6 +28,9 @@ const App: React.FC = () => {
           <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
           <Route path="/wallets" element={<Layout><Wallets /></Layout>} />
           <Route path="/budget" element={<Layout><Budget /></Layout>} />
+          
+          {/* صفحة إدارة التصنيفات */}
+          <Route path="/settings/categories" element={<Layout><CategoriesManager /></Layout>} />
           
           {/* إعادة توجيه /add إلى الصفحة الرئيسية */}
           <Route path="/add" element={<Navigate to="/" replace />} />
