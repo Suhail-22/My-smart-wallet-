@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { TransactionType, Category } from '../types';
-import { ArrowLeft, Calculator, Camera, ChevronDown, Image as ImageIcon, Menu, Smile, Meh, Frown, Users, Contact as ContactIcon, AlignLeft, Calendar, PlusCircle, MinusCircle, DollarSign, X } from 'lucide-react';
+import { TransactionType, Category, DebtType } from '../types'; // تم استيراد DebtType لتعريف الأنواع بشكل صحيح
+import { 
+    ArrowLeft, Calculator, Camera, ChevronDown, Image as ImageIcon, Menu, Smile, Meh, Frown, Users, Contact as ContactIcon, AlignLeft, Calendar, 
+    PlusCircle, MinusCircle, DollarSign, X, ArrowDownCircle, ArrowUpCircle, Handshake // أيقونات Lucide
+} from 'lucide-react';
 import { ContactPicker } from '../components/ContactPicker';
 
-// Simple Keyword Mapping for Auto-Categorization (احتفظت بها كما في الكود الأصلي)
+// Simple Keyword Mapping for Auto-Categorization (بقي كما هو)
 const KEYWORD_MAP: Record<string, string> = {
   'food': 'Food', 'lunch': 'Food', 'dinner': 'Food', 'burger': 'Food', 'supermarket': 'Food', 'bakery': 'Food',
   'taxi': 'Transport', 'uber': 'Transport', 'bus': 'Transport', 'fuel': 'Transport', 'gas': 'Transport',
@@ -14,17 +17,20 @@ const KEYWORD_MAP: Record<string, string> = {
   'shop': 'Shopping', 'clothes': 'Shopping', 'mall': 'Shopping'
 };
 
-// تعريف الخصائص لتلقي دالة الإغلاق من الـ Layout
+// تعريف الخصائص لتلقي دالة الإغلاق
 interface TransactionFormProps {
     onClose: () => void;
 }
+
+// *** تم تعديل نوع الحالة ليتضمن 'debt' ***
+type FormMode = TransactionType | 'debt' | null; 
 
 export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => {
   const { addTransaction, addCategory, categories, wallets, defaultTransactionType, currency } = useApp();
   const navigate = useNavigate();
 
   // *** التعديل الرئيسي: حالة لتحديد نوع المعاملة (بدءًا من null لعرض شاشة الاختيار) ***
-  const [transactionType, setTransactionType] = useState<TransactionType | 'debt' | null>(null);
+  const [transactionType, setTransactionType] = useState<FormMode>(null);
 
   const [formData, setFormData] = useState({
     amount: '',
@@ -32,43 +38,48 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
     description: '',
     date: new Date().toISOString().split('T')[0],
     time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
-    type: defaultTransactionType, // سيتم استبدالها بـ transactionType عند الإرسال
+    type: defaultTransactionType, // سنستخدم transactionType بدلاً من هذا في الإرسال
     walletId: wallets[0]?.id || '',
     contactName: '',
-    receiptImage: null as string | null,
+    receiptImage: undefined as string | undefined, // تصحيح ليتوافق مع النوع string | undefined
     isExcludedFromBalance: false,
-    // حقول الدين الإضافية (إذا كنت تستخدمها في الدين)
-    debtType: '', // On / Li
+    // حقول الدين الإضافية
+    debtType: DebtType.BORROWED as DebtType, // تم تحديد نوع DebtType
     dueDate: '',
   });
 
-  // ... (بقية الدالات والدوال المساعدة تبقى كما هي أو يتم تحديثها حسب الحاجة)
-
+  // تصحيح دالة الإرسال ليتوافق مع الأنواع
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!transactionType) return; // لا ينبغي أن يحدث
+    if (!transactionType) return;
     
-    // منطق حفظ الدين أو المعاملة العادية
+    // ... (منطق حفظ الدين أو المعاملة العادية)
     if (transactionType === 'debt') {
-        // ... هنا منطق حفظ الدين (افترض أنه لديك دالة addDebt في AppContext)
-        // مثال: addDebt({...formData, type: formData.debtType as DebtType, amount: Number(formData.amount), contact: formData.contactName});
+        // يمكنك هنا استدعاء دالة إضافة الدين الخاصة بك
         console.log("Saving Debt:", formData);
     } else {
-        // منطق حفظ الدخل أو المصروف
+        // تصحيح هيكل الكائن ليتوافق مع نوع Transaction
         addTransaction({
-            ...formData,
             id: crypto.randomUUID(),
             amount: Number(formData.amount),
             type: transactionType as TransactionType,
-            category: formData.category, // قد تحتاج لإيجاد الـ ID الصحيح
+            category: formData.category, 
+            description: formData.description,
+            date: formData.date,
+            time: formData.time,
+            walletId: formData.walletId,
+            contactName: formData.contactName,
+            receiptImage: formData.receiptImage, // string | undefined
+            isExcludedFromBalance: formData.isExcludedFromBalance,
+            profit: undefined, // أضف الحقول المفقودة كـ undefined إذا لزم الأمر
+            investmentId: undefined,
         });
     }
 
-    onClose(); // إغلاق النافذة المنبثقة
-    //navigate('/transactions'); // لن نستخدم الانتقال إذا كان نموذج Modal
+    onClose(); 
   };
   
-  // دالة لمعالجة الصورة - افترض أنها كانت موجودة
+  // دالة لمعالجة الصورة
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
@@ -93,11 +104,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             <div className="space-y-4">
                 {/* زر الدخل */}
                 <button
-                    onClick={() => setTransactionType('income')}
+                    onClick={() => setTransactionType('INCOME')} // تم تصحيح القيمة لـ 'INCOME'
                     className="flex items-center justify-between w-full p-4 bg-green-100 dark:bg-green-800/50 rounded-xl shadow transition-transform hover:scale-[1.01] border-2 border-green-200 dark:border-green-700"
                 >
                     <span className="flex items-center text-green-700 dark:text-green-300 font-bold text-lg">
-                        <PlusCircle size={28} className="ml-3" />
+                        <ArrowUpCircle size={28} className="ml-3" />
                         إضافة **دخل**
                     </span>
                     <ArrowLeft size={24} className="text-green-700 dark:text-green-300" />
@@ -105,11 +116,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
 
                 {/* زر المصروفات */}
                 <button
-                    onClick={() => setTransactionType('expense')}
+                    onClick={() => setTransactionType('EXPENSE')} // تم تصحيح القيمة لـ 'EXPENSE'
                     className="flex items-center justify-between w-full p-4 bg-red-100 dark:bg-red-800/50 rounded-xl shadow transition-transform hover:scale-[1.01] border-2 border-red-200 dark:border-red-700"
                 >
                     <span className="flex items-center text-red-700 dark:text-red-300 font-bold text-lg">
-                        <MinusCircle size={28} className="ml-3" />
+                        <ArrowDownCircle size={28} className="ml-3" />
                         إضافة **مصروف**
                     </span>
                     <ArrowLeft size={24} className="text-red-700 dark:text-red-300" />
@@ -121,7 +132,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                     className="flex items-center justify-between w-full p-4 bg-blue-100 dark:bg-blue-800/50 rounded-xl shadow transition-transform hover:scale-[1.01] border-2 border-blue-200 dark:border-blue-700"
                 >
                     <span className="flex items-center text-blue-700 dark:text-blue-300 font-bold text-lg">
-                        <DollarSign size={28} className="ml-3" />
+                        <Handshake size={28} className="ml-3" />
                         تسجيل **دين**
                     </span>
                     <ArrowLeft size={24} className="text-blue-700 dark:text-blue-300" />
@@ -135,11 +146,11 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
   // 2. نموذج الإدخال التفصيلي (يظهر بعد اختيار النوع)
   // -----------------------------------------------------
 
-  const title = transactionType === 'income' ? 'إضافة دخل جديد' : 
-                transactionType === 'expense' ? 'إضافة مصروف جديد' : 'تسجيل دين';
+  const title = transactionType === 'INCOME' ? 'إضافة دخل جديد' : 
+                transactionType === 'EXPENSE' ? 'إضافة مصروف جديد' : 'تسجيل دين'; // تم تصحيح مقارنة الأنواع
   
-  const typeColor = transactionType === 'income' ? 'bg-emerald-500 shadow-emerald-500/50' :
-                    transactionType === 'expense' ? 'bg-red-500 shadow-red-500/50' : 'bg-blue-500 shadow-blue-500/50';
+  const typeColor = transactionType === 'INCOME' ? 'bg-emerald-500 shadow-emerald-500/50' : // تم تصحيح مقارنة الأنواع
+                    transactionType === 'EXPENSE' ? 'bg-red-500 shadow-red-500/50' : 'bg-blue-500 shadow-blue-500/50'; // تم تصحيح مقارنة الأنواع
   
   const categoryOptions = categories.filter(c => 
     c.type === transactionType || transactionType === 'debt' // الديون قد تستخدم فئة خاصة أو لا
@@ -210,7 +221,8 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                             className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
                         >
                             <option value="">-- اختر تصنيفاً --</option>
-                            {categoryOptions.map(c => (
+                            {/* تم تصحيح الفلترة لتتوافق مع نوع transactionType */}
+                            {categories.filter(c => c.type === transactionType).map(c => ( 
                                 <option key={c.id} value={c.id}>{c.label}</option>
                             ))}
                         </select>
@@ -218,7 +230,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                 )}
                 
                 {/* حقل الطرف المقابل (للدين أو معاملة شخصية) */}
-                {(transactionType === 'debt' || transactionType === 'expense' ) && (
+                {(transactionType === 'debt' || transactionType === 'EXPENSE' ) && ( // تم تصحيح مقارنة النوع
                     <label className="block">
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">الطرف المقابل (شخص/جهة)</span>
                         <div className="mt-1">
@@ -241,9 +253,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                                     <input
                                         type="radio"
                                         name="debtType"
-                                        value="BORROWED" // علي (أنا المدين)
-                                        checked={formData.debtType === 'BORROWED'}
-                                        onChange={(e) => setFormData({ ...formData, debtType: e.target.value })}
+                                        value={DebtType.BORROWED} // علي (أنا المدين)
+                                        checked={formData.debtType === DebtType.BORROWED}
+                                        onChange={(e) => setFormData({ ...formData, debtType: e.target.value as DebtType })}
                                         required
                                         className="form-radio text-blue-600 dark:text-blue-400"
                                     />
@@ -253,9 +265,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                                     <input
                                         type="radio"
                                         name="debtType"
-                                        value="LENT" // لي (أنا الدائن)
-                                        checked={formData.debtType === 'LENT'}
-                                        onChange={(e) => setFormData({ ...formData, debtType: e.target.value })}
+                                        value={DebtType.LENT} // لي (أنا الدائن)
+                                        checked={formData.debtType === DebtType.LENT}
+                                        onChange={(e) => setFormData({ ...formData, debtType: e.target.value as DebtType })}
                                         required
                                         className="form-radio text-blue-600 dark:text-blue-400"
                                     />
@@ -326,7 +338,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                             <img src={formData.receiptImage} alt="Receipt" className="w-full h-auto rounded-lg border dark:border-gray-700" />
                             <button
                                 type="button"
-                                onClick={() => setFormData({...formData, receiptImage: null})}
+                                onClick={() => setFormData({...formData, receiptImage: undefined})}
                                 className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1"
                             >
                                 <X size={20} />
