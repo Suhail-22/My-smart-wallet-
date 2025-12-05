@@ -13,7 +13,6 @@ import {
   Sun,
   Menu,
   X,
-  BarChart3,
   Target
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -37,6 +36,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // إغلاق الشريط الجانبي عند تغيير الصفحة على الجوال
+  useEffect(() => {
+    if (isMobile && isSidebarOpen) {
+      setIsSidebarOpen(false);
+    }
+  }, [location.pathname, isMobile, isSidebarOpen]);
+
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
@@ -53,26 +59,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/settings', label: 'الإعدادات', icon: <Settings size={20} /> },
   ];
 
-  // إغلاق الشريط الجانبي عند تغيير الصفحة على الجوال
-  useEffect(() => {
-    if (isMobile) {
-      setIsSidebarOpen(false);
-    }
-  }, [location.pathname, isMobile]);
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-900 text-gray-800 dark:text-dark-200 flex flex-col md:flex-row">
-      {/* زر القائمة للجوال - أعلى الشاشة */}
+      {/* زر القائمة للجوال */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-3 bg-primary-600 text-white rounded-full shadow-2xl"
+        className="md:hidden fixed top-4 left-4 z-50 p-3 bg-primary-600 text-white rounded-full shadow-xl"
         aria-label="فتح القائمة"
       >
         {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      {/* شريط عنوان صغير للجوال */}
-      <div className="md:hidden fixed top-0 right-0 left-0 z-40 bg-white dark:bg-dark-800 border-b border-gray-200 dark:border-dark-700 p-4 flex items-center justify-center">
+      {/* شريط عنوان للجوال */}
+      <div className="md:hidden fixed top-0 right-0 left-0 z-40 bg-white dark:bg-dark-800 border-b border-gray-200 dark:border-dark-700 p-4 flex items-center justify-center shadow-sm">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
             <Wallet className="text-white" size={18} />
@@ -83,16 +82,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       {/* الشريط الجانبي */}
       <aside className={`
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-        md:translate-x-0
-        fixed md:relative 
-        w-64 md:w-56 h-full bg-white dark:bg-dark-800 
-        shadow-2xl md:shadow-none 
-        z-40 transition-transform duration-300 ease-in-out
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        fixed md:relative
+        top-0 bottom-0
+        w-64 md:w-56 h-full
+        bg-white dark:bg-dark-800
+        shadow-xl md:shadow-none
+        z-40
+        transition-transform duration-300 ease-in-out
         flex flex-col
         mt-16 md:mt-0
       `}>
-        {/* رأس الشريط الجانبي (للشاشات الكبيرة فقط) */}
+        {/* رأس الشريط الجانبي (للشاشات الكبيرة) */}
         <div className="hidden md:flex p-6 border-b border-gray-200 dark:border-dark-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
@@ -107,28 +108,23 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         {/* قائمة التنقل */}
         <nav className="flex-1 p-4 overflow-y-auto">
-          <ul className="space-y-1">
+          <ul className="space-y-2">
             {menuItems.map((item) => (
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  onClick={() => setIsSidebarOpen(false)}
+                  onClick={() => {
+                    if (isMobile) setIsSidebarOpen(false);
+                  }}
                   className={`
-                    flex items-center gap-3 p-3 rounded-lg transition-all duration-200
+                    flex items-center gap-3 p-3 rounded-lg transition-colors
                     ${location.pathname === item.path
-                      ? 'bg-primary-500 text-white shadow-lg'
+                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-700'
                     }
                   `}
                 >
-                  <div className={`
-                    ${location.pathname === item.path 
-                      ? 'text-white' 
-                      : 'text-primary-600 dark:text-primary-400'
-                    }
-                  `}>
-                    {item.icon}
-                  </div>
+                  {item.icon}
                   <span className="font-medium">{item.label}</span>
                 </Link>
               </li>
@@ -149,7 +145,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </>
             ) : (
               <>
-                <Moon size={20} className="text-blue-500" />
+                <Moon size={20} className="text-blue-400" />
                 <span className="font-medium">الوضع الليلي</span>
               </>
             )}
