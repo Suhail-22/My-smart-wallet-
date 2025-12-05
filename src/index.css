@@ -1,25 +1,36 @@
+/* إضافة إلى ملف index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
+/* حل مشكلة safe area للشاشات المنحنية */
+@supports (padding: max(0px)) {
   body {
-    font-family: 'Tajawal', sans-serif;
-    @apply bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200;
+    padding-left: min(0vmin, env(safe-area-inset-left));
+    padding-right: min(0vmin, env(safe-area-inset-right));
   }
 }
 
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
+/* إخفاء شريط العناوين في PWA */
+@media (display-mode: standalone) {
+  body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
-  
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .rtl {
-    direction: rtl;
-  }
+}
+
+/* تحسين اللمس */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* إصلاح ارتفاع 100vh على الجوال */
+.min-h-screen {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+html {
+  height: -webkit-fill-available;
 }
