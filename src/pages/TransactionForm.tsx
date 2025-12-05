@@ -1,5 +1,5 @@
 // src/pages/TransactionForm.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { TransactionType, Category, DebtType } from '../types';
 import { 
@@ -9,37 +9,59 @@ import {
 } from 'lucide-react';
 import { ContactPicker } from '../components/ContactPicker';
 
-const KEYWORD_MAP: Record<string, string> = {
-  'food': 'Food', 'lunch': 'Food', 'dinner': 'Food', 'burger': 'Food', 'supermarket': 'Food', 'bakery': 'Food',
-  'taxi': 'Transport', 'uber': 'Transport', 'bus': 'Transport', 'fuel': 'Transport', 'gas': 'Transport',
-  'wifi': 'Bills', 'net': 'Bills', 'internet': 'Bills', 'vodafone': 'Bills', 'electric': 'Bills', 'water': 'Bills',
-  'pharmacy': 'Health', 'doctor': 'Health', 'med': 'Health',
-  'shop': 'Shopping', 'clothes': 'Shopping', 'mall': 'Shopping'
-};
-
 interface TransactionFormProps {
   onClose: () => void;
+  type?: 'INCOME' | 'EXPENSE' | 'debt'; // ← لتحديد النوع عند الفتح من الزر العائم
+  mode?: 'create' | 'edit'; // ← لدعم التعديل
+  initialData?: any; // ← بيانات المعاملة/الدين للتعديل
 }
 
-type FormMode = 'INCOME' | 'EXPENSE' | 'debt' | null; 
+export const TransactionForm: React.FC<TransactionFormProps> = ({ 
+  onClose, 
+  type: initialType, 
+  mode = 'create', 
+  initialData 
+}) => {
+  const { 
+    addTransaction, 
+    updateTransaction, 
+    addDebt, 
+    updateDebt, 
+    categories, 
+    wallets, 
+    currency 
+  } = useApp();
 
-export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => {
-  const { addTransaction, categories, wallets, defaultTransactionType, currency } = useApp();
-  const [transactionType, setTransactionType] = useState<FormMode>(null);
+  const isEditing = mode === 'edit';
+
+  // تحديد النوع: إما من الـ prop أو null (لعرض شاشة الاختيار)
+  const [transactionType, setTransactionType] = useState<'INCOME' | 'EXPENSE' | 'debt' | null>(
+    initialType || (isEditing ? (initialData?.type || initialData?.debtType) : null)
+  );
+
   const [formData, setFormData] = useState({
-    amount: '',
-    category: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0],
-    type: defaultTransactionType, 
-    walletId: wallets[0]?.id || '',
-    contactName: '',
-    contactPhone: '',
-    receiptImage: undefined as string | undefined, 
-    isExcludedFromBalance: false,
-    debtType: DebtType.BORROWED as DebtType, 
-    dueDate: '',
+    id: initialData?.id || '',
+    amount: isEditing ? (initialData?.amount?.toString() || '') : '',
+    category: isEditing ? (initialData?.category || '') : '',
+    description: isEditing ? (initialData?.description || '') : '',
+    date: isEditing ? (initialData?.date || new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
+    type: isEditing ? (initialData?.type || 'EXPENSE') : 'EXPENSE',
+    walletId: isEditing ? (initialData?.walletId || wallets[0]?.id) : wallets[0]?.id || '',
+    contactName: isEditing ? (initialData?.contactName || initialData?.personName || '') : '',
+    contactPhone: isEditing ? (initialData?.contactPhone || '') : '',
+    receiptImage: isEditing ? (initialData?.receiptImage || undefined) : undefined,
+    isExcludedFromBalance: isEditing ? (initialData?.isExcludedFromBalance || false) : false,
+    debtType: isEditing ? (initialData?.type || initialData?.debtType || DebtType.BORROWED) : DebtType.BORROWED,
+    dueDate: isEditing ? (initialData?.dueDate || '') : '',
+    icon: isEditing ? (initialData?.icon || '💰') : '💰',
   });
+
+  // إذا تم فتح النموذج كـ "دين" مباشرةً، لا نعرض شاشة الاختيار
+  useEffect(() => {
+    if (initialType === 'debt') {
+      setTransactionType('debt');
+    }
+  }, [initialType]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -55,37 +77,62 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!transactionType || !formData.amount) return;
-    
+
     if (transactionType === 'debt') {
-      console.log("Saving Debt:", formData);
+      const debtData = {
+        id: formData.id || crypto.randomUUID(),
+        personName: formData.contactName,
+        amount: Number(formData.amount),
+        initialAmount: Number(formData.amount),
+        type: formData.debtType,
+        dueDate: formData.dueDate || undefined,
+        notes: formData.description,
+        icon: formData.icon,
+        receiptImage: formData.receiptImage,
+        date: formData.date,
+        isSettled: false,
+      };
+
+      if (isEditing) {
+        updateDebt(formData.id, debtData);
+      } else {
+        addDebt(debtData, true, formData.walletId);
+      }
+    } else {
+      const txData = {
+        id: formData.id || crypto.randomUUID(),
+        amount: Number(formData.amount),
+        type: transactionType as TransactionType,
+        category: formData.category,
+        description: formData.description,
+        date: formData.date,
+        walletId: formData.walletId,
+        contactName: formData.contactName,
+        contactPhone: formData.contactPhone,
+        receiptImage: formData.receiptImage,
+        isExcludedFromBalance: formData.isExcludedFromBalance,
+        profit: undefined,
+        investmentId: undefined,
+      };
+
+      if (isEditing) {
+        updateTransaction(formData.id, txData);
+      } else {
+        addTransaction(txData);
+      }
     }
-    
-    addTransaction({
-      id: crypto.randomUUID(),
-      amount: Number(formData.amount),
-      type: transactionType as TransactionType,
-      category: formData.category,
-      description: formData.description,
-      date: formData.date,
-      walletId: formData.walletId,
-      contactName: formData.contactName,
-      contactPhone: formData.contactPhone,
-      receiptImage: formData.receiptImage, 
-      isExcludedFromBalance: formData.isExcludedFromBalance,
-      profit: undefined, 
-      investmentId: undefined,
-    });
-    
-    onClose(); 
+
+    onClose();
   };
 
-  if (!transactionType) {
+  // === شاشة اختيار النوع (تظهر فقط إذا لم يُحدد النوع مسبقًا) ===
+  if (!transactionType && !initialType) {
     return (
       <div className="p-2">
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">اختر نوع المعاملة</h2>
         <div className="space-y-4">
           <button
-            onClick={() => setTransactionType('INCOME')} 
+            onClick={() => setTransactionType('INCOME')}
             className="flex items-center justify-between w-full p-4 bg-green-100 dark:bg-green-800/50 rounded-xl shadow transition-transform hover:scale-[1.01] border-2 border-green-200 dark:border-green-700"
           >
             <span className="flex items-center text-green-700 dark:text-green-300 font-bold text-lg">
@@ -95,7 +142,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             <ArrowLeft size={24} className="text-green-700 dark:text-green-300" />
           </button>
           <button
-            onClick={() => setTransactionType('EXPENSE')} 
+            onClick={() => setTransactionType('EXPENSE')}
             className="flex items-center justify-between w-full p-4 bg-red-100 dark:bg-red-800/50 rounded-xl shadow transition-transform hover:scale-[1.01] border-2 border-red-200 dark:border-red-700"
           >
             <span className="flex items-center text-red-700 dark:text-red-300 font-bold text-lg">
@@ -127,12 +174,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-6 border-b pb-3 dark:border-gray-700">
-        <button 
-          onClick={() => setTransactionType(null)} 
-          className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
-        >
-          <ArrowLeft size={24} />
-        </button>
+        {!initialType && (
+          <button 
+            onClick={() => setTransactionType(null)} 
+            className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+          >
+            <ArrowLeft size={24} />
+          </button>
+        )}
         <h2 className="text-xl font-bold text-gray-800 dark:text-white">{title}</h2>
         <button onClick={onClose} className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
           <X size={24} />
@@ -140,6 +189,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
       </div>
 
       <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto space-y-4 pb-20">
+        {/* المبلغ */}
         <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
           <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">المبلغ</label>
           <div className="flex items-center">
@@ -156,6 +206,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
         </div>
 
         <div className="space-y-4">
+          {/* المحفظة */}
           <label className="block">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">المحفظة / الحساب</span>
             <select
@@ -168,6 +219,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             </select>
           </label>
 
+          {/* التصنيف */}
           {transactionType !== 'debt' && (
             <label className="block">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">التصنيف</span>
@@ -178,21 +230,14 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                 className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">-- اختر تصنيفاً --</option>
-                {(() => {
-                  const renderOptions = (cats: any[], level = 0) => {
-                    return cats.map(cat => [
-                      <option key={cat.id} value={cat.id} style={{ paddingLeft: `${level * 16}px` }}>
-                        {cat.icon} {cat.label}
-                      </option>,
-                      ...(cat.children ? renderOptions(cat.children, level + 1) : [])
-                    ]).flat();
-                  };
-                  return renderOptions(categories.filter(c => c.type === transactionType));
-                })()}
+                {categories.filter(c => c.type === transactionType).map(c => (
+                  <option key={c.id} value={c.id}>{c.label}</option>
+                ))}
               </select>
             </label>
           )}
 
+          {/* الطرف المقابل + رمز الاتصال */}
           {(transactionType === 'debt' || transactionType === 'EXPENSE') && (
             <label className="block">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">الطرف المقابل</span>
@@ -216,6 +261,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             </label>
           )}
 
+          {/* حقول الدين */}
           {transactionType === 'debt' && (
             <>
               <label className="block">
@@ -259,6 +305,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             </>
           )}
 
+          {/* الوصف */}
           <label className="block">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">الوصف / ملاحظات</span>
             <input
@@ -270,6 +317,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             />
           </label>
 
+          {/* التاريخ */}
           <label className="block">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">التاريخ</span>
             <input
@@ -281,6 +329,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             />
           </label>
 
+          {/* الصورة */}
           <label className="block pt-2">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">سند/صورة المعاملة (اختياري)</span>
             <input 
@@ -303,6 +352,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             )}
           </label>
 
+          {/* عدم التأثير على الرصيد */}
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-1">
               <span className="text-gray-600 dark:text-gray-300 font-bold">عدم التأثير على الرصيد</span>
@@ -317,12 +367,13 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
           </div>
         </div>
 
+        {/* زر الحفظ */}
         <div className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto p-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 z-50">
           <button 
             type="submit"
             className={`w-full text-white font-bold text-lg py-4 rounded-xl shadow-lg transition-colors ${typeColor}`}
           >
-            حفظ المعاملة
+            {isEditing ? 'حفظ التعديل' : 'حفظ المعاملة'}
           </button>
         </div>
       </form>
