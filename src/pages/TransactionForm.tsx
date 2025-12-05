@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-import { TransactionType, Category, DebtType } from '../types'; // تم استيراد DebtType لتعريف الأنواع بشكل صحيح
+import { TransactionType, Category, DebtType } from '../types'; // تأكد من وجود DebtType في ملف types.ts
 import { 
-    ArrowLeft, Calculator, Camera, ChevronDown, Image as ImageIcon, Menu, Smile, Meh, Frown, Users, Contact as ContactIcon, AlignLeft, Calendar, 
-    PlusCircle, MinusCircle, DollarSign, X, ArrowDownCircle, ArrowUpCircle, Handshake // أيقونات Lucide
+    ArrowLeft, X, ArrowDownCircle, ArrowUpCircle, Handshake,
+    PlusCircle, MinusCircle, DollarSign,
+    Users, Contact as ContactIcon, AlignLeft, Calendar 
+    // أيقونات Lucide أخرى قد تحتاجها
 } from 'lucide-react';
 import { ContactPicker } from '../components/ContactPicker';
 
@@ -17,19 +19,19 @@ const KEYWORD_MAP: Record<string, string> = {
   'shop': 'Shopping', 'clothes': 'Shopping', 'mall': 'Shopping'
 };
 
-// تعريف الخصائص لتلقي دالة الإغلاق
+// تعريف الخصائص لتلقي دالة الإغلاق (لحل خطأ TS2741)
 interface TransactionFormProps {
     onClose: () => void;
 }
 
-// *** تم تعديل نوع الحالة ليتضمن 'debt' ***
-type FormMode = TransactionType | 'debt' | null; 
+// *** تم تعريف FormMode بشكل صريح لحل أخطاء TS2345 ***
+type FormMode = 'INCOME' | 'EXPENSE' | 'debt' | null; 
 
 export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => {
   const { addTransaction, addCategory, categories, wallets, defaultTransactionType, currency } = useApp();
   const navigate = useNavigate();
 
-  // *** التعديل الرئيسي: حالة لتحديد نوع المعاملة (بدءًا من null لعرض شاشة الاختيار) ***
+  // حالة لتحديد نوع المعاملة (بدءًا من null لعرض شاشة الاختيار)
   const [transactionType, setTransactionType] = useState<FormMode>(null);
 
   const [formData, setFormData] = useState({
@@ -37,48 +39,17 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
     category: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
-    time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
-    type: defaultTransactionType, // سنستخدم transactionType بدلاً من هذا في الإرسال
+    // *** تم حذف حقل time لحل خطأ TS2353 ***
+    type: defaultTransactionType, 
     walletId: wallets[0]?.id || '',
     contactName: '',
-    receiptImage: undefined as string | undefined, // تصحيح ليتوافق مع النوع string | undefined
+    receiptImage: undefined as string | undefined, 
     isExcludedFromBalance: false,
     // حقول الدين الإضافية
-    debtType: DebtType.BORROWED as DebtType, // تم تحديد نوع DebtType
+    debtType: DebtType.BORROWED as DebtType, 
     dueDate: '',
   });
 
-  // تصحيح دالة الإرسال ليتوافق مع الأنواع
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!transactionType) return;
-    
-    // ... (منطق حفظ الدين أو المعاملة العادية)
-    if (transactionType === 'debt') {
-        // يمكنك هنا استدعاء دالة إضافة الدين الخاصة بك
-        console.log("Saving Debt:", formData);
-    } else {
-        // تصحيح هيكل الكائن ليتوافق مع نوع Transaction
-        addTransaction({
-            id: crypto.randomUUID(),
-            amount: Number(formData.amount),
-            type: transactionType as TransactionType,
-            category: formData.category, 
-            description: formData.description,
-            date: formData.date,
-            time: formData.time,
-            walletId: formData.walletId,
-            contactName: formData.contactName,
-            receiptImage: formData.receiptImage, // string | undefined
-            isExcludedFromBalance: formData.isExcludedFromBalance,
-            profit: undefined, // أضف الحقول المفقودة كـ undefined إذا لزم الأمر
-            investmentId: undefined,
-        });
-    }
-
-    onClose(); 
-  };
-  
   // دالة لمعالجة الصورة
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -89,6 +60,36 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
           };
           reader.readAsDataURL(file);
       }
+  };
+
+  // دالة الإرسال
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!transactionType) return;
+    
+    if (transactionType === 'debt') {
+        console.log("Saving Debt:", formData);
+        // يجب أن تضيف هنا دالة addDebt إذا كانت موجودة لديك
+    } else {
+        // تصحيح هيكل الكائن ليتوافق مع نوع Transaction (بدون time)
+        addTransaction({
+            id: crypto.randomUUID(),
+            amount: Number(formData.amount),
+            type: transactionType as TransactionType,
+            category: formData.category, 
+            description: formData.description,
+            date: formData.date,
+            // *** تم حذف time: formData.time, ***
+            walletId: formData.walletId,
+            contactName: formData.contactName,
+            receiptImage: formData.receiptImage, 
+            isExcludedFromBalance: formData.isExcludedFromBalance,
+            profit: undefined, 
+            investmentId: undefined,
+        });
+    }
+
+    onClose(); 
   };
 
 
@@ -104,7 +105,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
             <div className="space-y-4">
                 {/* زر الدخل */}
                 <button
-                    onClick={() => setTransactionType('INCOME')} // تم تصحيح القيمة لـ 'INCOME'
+                    onClick={() => setTransactionType('INCOME')} 
                     className="flex items-center justify-between w-full p-4 bg-green-100 dark:bg-green-800/50 rounded-xl shadow transition-transform hover:scale-[1.01] border-2 border-green-200 dark:border-green-700"
                 >
                     <span className="flex items-center text-green-700 dark:text-green-300 font-bold text-lg">
@@ -116,7 +117,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
 
                 {/* زر المصروفات */}
                 <button
-                    onClick={() => setTransactionType('EXPENSE')} // تم تصحيح القيمة لـ 'EXPENSE'
+                    onClick={() => setTransactionType('EXPENSE')} 
                     className="flex items-center justify-between w-full p-4 bg-red-100 dark:bg-red-800/50 rounded-xl shadow transition-transform hover:scale-[1.01] border-2 border-red-200 dark:border-red-700"
                 >
                     <span className="flex items-center text-red-700 dark:text-red-300 font-bold text-lg">
@@ -147,13 +148,13 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
   // -----------------------------------------------------
 
   const title = transactionType === 'INCOME' ? 'إضافة دخل جديد' : 
-                transactionType === 'EXPENSE' ? 'إضافة مصروف جديد' : 'تسجيل دين'; // تم تصحيح مقارنة الأنواع
+                transactionType === 'EXPENSE' ? 'إضافة مصروف جديد' : 'تسجيل دين'; 
   
-  const typeColor = transactionType === 'INCOME' ? 'bg-emerald-500 shadow-emerald-500/50' : // تم تصحيح مقارنة الأنواع
-                    transactionType === 'EXPENSE' ? 'bg-red-500 shadow-red-500/50' : 'bg-blue-500 shadow-blue-500/50'; // تم تصحيح مقارنة الأنواع
+  const typeColor = transactionType === 'INCOME' ? 'bg-emerald-500 shadow-emerald-500/50' : 
+                    transactionType === 'EXPENSE' ? 'bg-red-500 shadow-red-500/50' : 'bg-blue-500 shadow-blue-500/50';
   
   const categoryOptions = categories.filter(c => 
-    c.type === transactionType || transactionType === 'debt' // الديون قد تستخدم فئة خاصة أو لا
+    c.type === transactionType || transactionType === 'debt' 
   );
 
   return (
@@ -168,6 +169,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                 <ArrowLeft size={24} />
             </button>
             <h2 className="text-xl font-bold text-gray-800 dark:text-white">{title}</h2>
+            {/* زر الإغلاق X */}
             <button
                 onClick={onClose}
                 className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
@@ -221,7 +223,6 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                             className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
                         >
                             <option value="">-- اختر تصنيفاً --</option>
-                            {/* تم تصحيح الفلترة لتتوافق مع نوع transactionType */}
                             {categories.filter(c => c.type === transactionType).map(c => ( 
                                 <option key={c.id} value={c.id}>{c.label}</option>
                             ))}
@@ -230,7 +231,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                 )}
                 
                 {/* حقل الطرف المقابل (للدين أو معاملة شخصية) */}
-                {(transactionType === 'debt' || transactionType === 'EXPENSE' ) && ( // تم تصحيح مقارنة النوع
+                {(transactionType === 'debt' || transactionType === 'EXPENSE' ) && ( 
                     <label className="block">
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">الطرف المقابل (شخص/جهة)</span>
                         <div className="mt-1">
@@ -301,28 +302,17 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => 
                     />
                 </label>
 
-                {/* حقل التاريخ والوقت */}
-                <div className="flex gap-4">
-                    <label className="block flex-1">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">التاريخ</span>
-                        <input
-                            type="date"
-                            value={formData.date}
-                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                            required
-                            className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
-                        />
-                    </label>
-                    <label className="block w-20">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">الوقت</span>
-                        <input
-                            type="time"
-                            value={formData.time}
-                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                            className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
-                        />
-                    </label>
-                </div>
+                {/* حقل التاريخ فقط (تم حذف الوقت) */}
+                <label className="block">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">التاريخ</span>
+                    <input
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        required
+                        className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
+                    />
+                </label>
                 
                 {/* حقل الصورة */}
                 <label className="block pt-2">
