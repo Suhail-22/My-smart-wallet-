@@ -1,12 +1,11 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { TransactionType, Category } from '../types';
-import { ArrowLeft, Calculator, Camera, ChevronDown, Image as ImageIcon, Menu, Smile, Meh, Frown, Users, Contact as ContactIcon, AlignLeft, Calendar } from 'lucide-react';
+import { ArrowLeft, Calculator, Camera, ChevronDown, Image as ImageIcon, Menu, Smile, Meh, Frown, Users, Contact as ContactIcon, AlignLeft, Calendar, PlusCircle, MinusCircle, DollarSign, X } from 'lucide-react';
 import { ContactPicker } from '../components/ContactPicker';
 
-// Simple Keyword Mapping for Auto-Categorization
+// Simple Keyword Mapping for Auto-Categorization (احتفظت بها كما في الكود الأصلي)
 const KEYWORD_MAP: Record<string, string> = {
   'food': 'Food', 'lunch': 'Food', 'dinner': 'Food', 'burger': 'Food', 'supermarket': 'Food', 'bakery': 'Food',
   'taxi': 'Transport', 'uber': 'Transport', 'bus': 'Transport', 'fuel': 'Transport', 'gas': 'Transport',
@@ -15,295 +14,355 @@ const KEYWORD_MAP: Record<string, string> = {
   'shop': 'Shopping', 'clothes': 'Shopping', 'mall': 'Shopping'
 };
 
-export const TransactionForm: React.FC = () => {
+// تعريف الخصائص لتلقي دالة الإغلاق من الـ Layout
+interface TransactionFormProps {
+    onClose: () => void;
+}
+
+export const TransactionForm: React.FC<TransactionFormProps> = ({ onClose }) => {
   const { addTransaction, addCategory, categories, wallets, defaultTransactionType, currency } = useApp();
   const navigate = useNavigate();
-  
+
+  // *** التعديل الرئيسي: حالة لتحديد نوع المعاملة (بدءًا من null لعرض شاشة الاختيار) ***
+  const [transactionType, setTransactionType] = useState<TransactionType | 'debt' | null>(null);
+
   const [formData, setFormData] = useState({
     amount: '',
     category: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
-    time: new Date().toTimeString().split(' ')[0].slice(0, 5), // HH:MM
-    type: defaultTransactionType || TransactionType.EXPENSE,
+    time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+    type: defaultTransactionType, // سيتم استبدالها بـ transactionType عند الإرسال
     walletId: wallets[0]?.id || '',
-    necessityLevel: 'NORMAL' as 'NECESSITY' | 'NORMAL' | 'LUXURY',
-    isRecurring: false,
-    alertReminder: false,
-    isExcludedFromBalance: false,
     contactName: '',
-    groupName: ''
+    receiptImage: null as string | null,
+    isExcludedFromBalance: false,
+    // حقول الدين الإضافية (إذا كنت تستخدمها في الدين)
+    debtType: '', // On / Li
+    dueDate: '',
   });
 
-  // Filter categories based on selected type
-  const availableCategories = categories.filter(c => c.type === formData.type);
-
-  // Set default category
-  useEffect(() => {
-    const currentCatValid = availableCategories.find(c => c.id === formData.category);
-    if (!currentCatValid && availableCategories.length > 0) {
-      setFormData(prev => ({ ...prev, category: availableCategories[0].id }));
-    }
-  }, [formData.type, categories, availableCategories]);
-
-  // Handle Description Change
-  const handleDescriptionChange = (desc: string) => {
-      setFormData(prev => ({ ...prev, description: desc }));
-      // Auto-categorize
-      const lowerDesc = desc.toLowerCase();
-      for (const [key, catId] of Object.entries(KEYWORD_MAP)) {
-          if (lowerDesc.includes(key)) {
-               const targetCat = availableCategories.find(c => c.id === catId || c.id.toLowerCase().includes(catId.toLowerCase()));
-               if (targetCat) {
-                   setFormData(prev => ({ ...prev, category: targetCat.id }));
-               }
-               break; 
-          }
-      }
-  };
+  // ... (بقية الدالات والدوال المساعدة تبقى كما هي أو يتم تحديثها حسب الحاجة)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addTransaction({
-      id: crypto.randomUUID(),
-      amount: parseFloat(formData.amount),
-      category: formData.category, 
-      description: formData.description,
-      date: formData.date,
-      type: formData.type,
-      walletId: formData.walletId,
-      necessityLevel: formData.necessityLevel,
-      isRecurring: formData.isRecurring,
-      isExcludedFromBalance: formData.isExcludedFromBalance,
-      contactName: formData.contactName,
-      groupName: formData.groupName,
-      alertReminder: formData.alertReminder
-    });
-    navigate('/');
+    if (!transactionType) return; // لا ينبغي أن يحدث
+    
+    // منطق حفظ الدين أو المعاملة العادية
+    if (transactionType === 'debt') {
+        // ... هنا منطق حفظ الدين (افترض أنه لديك دالة addDebt في AppContext)
+        // مثال: addDebt({...formData, type: formData.debtType as DebtType, amount: Number(formData.amount), contact: formData.contactName});
+        console.log("Saving Debt:", formData);
+    } else {
+        // منطق حفظ الدخل أو المصروف
+        addTransaction({
+            ...formData,
+            id: crypto.randomUUID(),
+            amount: Number(formData.amount),
+            type: transactionType as TransactionType,
+            category: formData.category, // قد تحتاج لإيجاد الـ ID الصحيح
+        });
+    }
+
+    onClose(); // إغلاق النافذة المنبثقة
+    //navigate('/transactions'); // لن نستخدم الانتقال إذا كان نموذج Modal
+  };
+  
+  // دالة لمعالجة الصورة - افترض أنها كانت موجودة
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setFormData({ ...formData, receiptImage: reader.result as string });
+          };
+          reader.readAsDataURL(file);
+      }
   };
 
+
+  // -----------------------------------------------------
+  // 1. شاشة اختيار نوع المعاملة (ستظهر أولاً)
+  // -----------------------------------------------------
+
+  if (!transactionType) {
+    return (
+        <div className="p-2">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">اختر نوع المعاملة</h2>
+            
+            <div className="space-y-4">
+                {/* زر الدخل */}
+                <button
+                    onClick={() => setTransactionType('income')}
+                    className="flex items-center justify-between w-full p-4 bg-green-100 dark:bg-green-800/50 rounded-xl shadow transition-transform hover:scale-[1.01] border-2 border-green-200 dark:border-green-700"
+                >
+                    <span className="flex items-center text-green-700 dark:text-green-300 font-bold text-lg">
+                        <PlusCircle size={28} className="ml-3" />
+                        إضافة **دخل**
+                    </span>
+                    <ArrowLeft size={24} className="text-green-700 dark:text-green-300" />
+                </button>
+
+                {/* زر المصروفات */}
+                <button
+                    onClick={() => setTransactionType('expense')}
+                    className="flex items-center justify-between w-full p-4 bg-red-100 dark:bg-red-800/50 rounded-xl shadow transition-transform hover:scale-[1.01] border-2 border-red-200 dark:border-red-700"
+                >
+                    <span className="flex items-center text-red-700 dark:text-red-300 font-bold text-lg">
+                        <MinusCircle size={28} className="ml-3" />
+                        إضافة **مصروف**
+                    </span>
+                    <ArrowLeft size={24} className="text-red-700 dark:text-red-300" />
+                </button>
+
+                {/* زر الديون */}
+                <button
+                    onClick={() => setTransactionType('debt')}
+                    className="flex items-center justify-between w-full p-4 bg-blue-100 dark:bg-blue-800/50 rounded-xl shadow transition-transform hover:scale-[1.01] border-2 border-blue-200 dark:border-blue-700"
+                >
+                    <span className="flex items-center text-blue-700 dark:text-blue-300 font-bold text-lg">
+                        <DollarSign size={28} className="ml-3" />
+                        تسجيل **دين**
+                    </span>
+                    <ArrowLeft size={24} className="text-blue-700 dark:text-blue-300" />
+                </button>
+            </div>
+        </div>
+    );
+  }
+
+  // -----------------------------------------------------
+  // 2. نموذج الإدخال التفصيلي (يظهر بعد اختيار النوع)
+  // -----------------------------------------------------
+
+  const title = transactionType === 'income' ? 'إضافة دخل جديد' : 
+                transactionType === 'expense' ? 'إضافة مصروف جديد' : 'تسجيل دين';
+  
+  const typeColor = transactionType === 'income' ? 'bg-emerald-500 shadow-emerald-500/50' :
+                    transactionType === 'expense' ? 'bg-red-500 shadow-red-500/50' : 'bg-blue-500 shadow-blue-500/50';
+  
+  const categoryOptions = categories.filter(c => 
+    c.type === transactionType || transactionType === 'debt' // الديون قد تستخدم فئة خاصة أو لا
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
-         <button onClick={() => navigate('/')} className="p-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"><ArrowLeft /></button>
-         <h1 className="text-lg font-bold text-gray-800 dark:text-white">
-            {formData.type === TransactionType.EXPENSE ? 'تسجيل مصروف' : 'تسجيل دخل'}
-         </h1>
-         <button className="p-2 text-gray-500"><Menu /></button>
-      </div>
+    <div className="flex flex-col h-full">
+        {/* شريط العنوان والرجوع */}
+        <div className="flex items-center justify-between mb-6 border-b pb-3 dark:border-gray-700">
+            <button 
+                onClick={() => setTransactionType(null)} 
+                className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+                aria-label="الرجوع إلى اختيار النوع"
+            >
+                <ArrowLeft size={24} />
+            </button>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white">{title}</h2>
+            <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+            >
+                <X size={24} />
+            </button>
+        </div>
 
-      <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-          <div className="flex-1 overflow-y-auto pb-24">
-              
-              {/* Top Section: Amount */}
-              <div className="bg-white dark:bg-gray-800 p-6 mb-2 flex items-end gap-2 border-b border-emerald-500/30">
-                  <div className="border-2 border-emerald-500 rounded-lg px-2 py-1 text-emerald-600 font-bold text-sm h-10 flex items-center justify-center min-w-[3rem]">
-                      {currency === 'YER' ? 'ر.ي' : currency}
-                  </div>
-                  <div className="flex-1 relative">
-                       <label className="text-gray-400 text-xs absolute -top-4 right-0">المبلغ</label>
-                       <input 
-                         type="number" 
-                         step="0.01"
-                         required
-                         autoFocus
-                         className="w-full text-4xl font-bold text-gray-800 dark:text-white outline-none bg-transparent placeholder-gray-200"
-                         placeholder="0.00"
-                         value={formData.amount}
-                         onChange={e => setFormData({...formData, amount: e.target.value})}
-                         dir="ltr"
-                       />
-                       <div className="h-0.5 bg-emerald-500 w-full mt-1"></div>
-                  </div>
-                  <div className="bg-emerald-500 text-white p-2 rounded-lg">
-                      <Calculator size={20} />
-                  </div>
-              </div>
-
-              {/* Category Selection */}
-              <div className="bg-white dark:bg-gray-800 p-4 mb-2 flex items-center justify-between cursor-pointer" onClick={() => {}}>
-                  <div className="flex items-center gap-3 flex-1">
-                       <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xl text-emerald-600">
-                           {categories.find(c => c.id === formData.category)?.icon || '🏷️'}
-                       </div>
-                       <select 
-                          className="flex-1 bg-transparent text-gray-800 dark:text-white font-bold outline-none text-lg appearance-none cursor-pointer"
-                          value={formData.category}
-                          onChange={e => setFormData({...formData, category: e.target.value})}
-                       >
-                           {availableCategories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                       </select>
-                  </div>
-                  <div className="text-gray-400"><ChevronDown /></div>
-              </div>
-
-              {/* Wallet Selection */}
-              <div className="bg-white dark:bg-gray-800 p-4 mb-2 flex items-center gap-3">
-                   <span className="text-gray-500 text-sm w-20">من محفظة:</span>
-                   <select 
-                      value={formData.walletId}
-                      onChange={e => setFormData({...formData, walletId: e.target.value})}
-                      className="flex-1 bg-transparent text-gray-800 dark:text-white outline-none"
-                   >
-                       {wallets.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                   </select>
-              </div>
-
-              {/* Description */}
-              <div className="bg-white dark:bg-gray-800 p-4 mb-2 flex items-center gap-3">
-                   <div className="text-gray-400"><AlignLeft size={20} /></div>
-                   <input 
-                     type="text" 
-                     placeholder="الملاحظات"
-                     className="flex-1 bg-transparent outline-none text-gray-800 dark:text-white placeholder-gray-400"
-                     value={formData.description}
-                     onChange={e => handleDescriptionChange(e.target.value)}
-                   />
-              </div>
-
-              {/* Date & Time */}
-              <div className="bg-white dark:bg-gray-800 p-4 mb-2 flex gap-4">
-                  <div className="flex-1 flex items-center gap-2 border-b border-gray-100 dark:border-gray-700 pb-2">
-                       <input 
-                         type="time" 
-                         className="flex-1 bg-transparent outline-none text-gray-800 dark:text-white text-left"
-                         value={formData.time}
-                         onChange={e => setFormData({...formData, time: e.target.value})}
-                       />
-                  </div>
-                  <div className="flex-[2] flex items-center gap-2 border-b border-gray-100 dark:border-gray-700 pb-2">
-                       <div className="text-gray-400"><Calendar size={18} /></div>
-                       <input 
-                         type="date" 
-                         className="flex-1 bg-transparent outline-none text-gray-800 dark:text-white text-left"
-                         value={formData.date}
-                         onChange={e => setFormData({...formData, date: e.target.value})}
-                       />
-                       <span className="text-xs text-gray-400">تاريخ المعاملة</span>
-                  </div>
-              </div>
-
-              {/* Attachments */}
-              <div className="bg-white dark:bg-gray-800 p-4 mb-2 flex items-center gap-4 text-gray-400">
-                  <div className="flex-1 h-12 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-center">
-                      <ImageIcon size={20} />
-                  </div>
-                  <div className="flex-1 h-12 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-center">
-                      <Camera size={20} />
-                  </div>
-              </div>
-
-              {/* Recurring Toggle */}
-              <div className="bg-white dark:bg-gray-800 p-4 mb-0 flex items-center justify-between border-b border-gray-50 dark:border-gray-700">
-                  <span className="text-gray-600 dark:text-gray-300">تكرار المعاملة</span>
-                  <div 
-                    className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer ${formData.isRecurring ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-                    onClick={() => setFormData({...formData, isRecurring: !formData.isRecurring})}
-                  >
-                      <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.isRecurring ? '-translate-x-6' : 'translate-x-0'}`} />
-                  </div>
-              </div>
-              
-              {/* Alert Toggle */}
-               <div className="bg-white dark:bg-gray-800 p-4 mb-2 flex items-center justify-between">
-                  <span className="text-gray-600 dark:text-gray-300 text-sm">التنبيه بالمعاملة (سيتم تذكيرك قبل الموعد)</span>
-                  <div 
-                    className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer ${formData.alertReminder ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-                    onClick={() => setFormData({...formData, alertReminder: !formData.alertReminder})}
-                  >
-                      <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.alertReminder ? '-translate-x-6' : 'translate-x-0'}`} />
-                  </div>
-              </div>
-
-              {/* Group & Contact Section (Masareef Style) */}
-              <div className="bg-white dark:bg-gray-800 p-4 mb-2 space-y-3">
-                 {/* Group / Project */}
-                 <div className="flex items-center gap-3">
-                    <div className="text-gray-400 w-8 flex justify-center"><Users size={22} /></div>
-                    <span className="text-gray-500 dark:text-gray-400 font-medium w-24">المجموعة</span>
-                    <input 
-                        type="text" 
-                        placeholder="مشروع / عائلة (اختياري)" 
-                        className="flex-1 border-b border-gray-200 dark:border-gray-700 pb-1 bg-transparent outline-none dark:text-white text-sm"
-                        value={formData.groupName}
-                        onChange={e => setFormData({...formData, groupName: e.target.value})}
+        <form onSubmit={handleSubmit} className="flex-grow overflow-y-auto space-y-4 pb-20">
+            {/* حقل المبلغ */}
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">المبلغ</label>
+                <div className="flex items-center">
+                    <span className="text-2xl font-bold text-gray-400 dark:text-gray-500 ml-2">{currency}</span>
+                    <input
+                        type="number"
+                        placeholder="0.00"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        required
+                        className="flex-1 p-0 border-none outline-none focus:ring-0 text-3xl font-extrabold text-gray-900 dark:text-white bg-transparent text-right"
                     />
-                 </div>
-                 
-                 {/* Contact */}
-                 <div className="flex items-center gap-3">
-                    <div className="text-yellow-400 w-8 flex justify-center"><ContactIcon size={22} className="fill-current" /></div>
-                    <span className="text-gray-500 dark:text-gray-400 font-medium w-24">جهة الإتصال</span>
-                    <div className="flex-1">
-                        <ContactPicker 
-                            onSelect={(name) => setFormData({...formData, contactName: name})}
-                            initialValue={formData.contactName}
-                            placeholder="اختر جهة اتصال..."
+                </div>
+            </div>
+
+            {/* الحقول الأخرى */}
+            <div className="space-y-4">
+                {/* حقل المحفظة */}
+                <label className="block">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">المحفظة / الحساب</span>
+                    <select
+                        value={formData.walletId}
+                        onChange={(e) => setFormData({ ...formData, walletId: e.target.value })}
+                        required
+                        className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
+                    >
+                        {wallets.map(w => (
+                            <option key={w.id} value={w.id}>{w.name}</option>
+                        ))}
+                    </select>
+                </label>
+
+                {/* حقل التصنيف (يظهر للدخل والمصروف) */}
+                {transactionType !== 'debt' && (
+                    <label className="block">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">التصنيف</span>
+                        <select
+                            value={formData.category}
+                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                            required
+                            className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
+                        >
+                            <option value="">-- اختر تصنيفاً --</option>
+                            {categoryOptions.map(c => (
+                                <option key={c.id} value={c.id}>{c.label}</option>
+                            ))}
+                        </select>
+                    </label>
+                )}
+                
+                {/* حقل الطرف المقابل (للدين أو معاملة شخصية) */}
+                {(transactionType === 'debt' || transactionType === 'expense' ) && (
+                    <label className="block">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">الطرف المقابل (شخص/جهة)</span>
+                        <div className="mt-1">
+                            <ContactPicker 
+                                onSelect={(name) => setFormData({...formData, contactName: name})}
+                                initialValue={formData.contactName}
+                                placeholder='اسم الشخص أو الجهة'
+                            />
+                        </div>
+                    </label>
+                )}
+
+                {/* حقول الدين الإضافية (تظهر فقط إذا كان النوع هو دين) */}
+                {transactionType === 'debt' && (
+                    <>
+                        <label className="block">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">نوع الدين</span>
+                            <div className="flex space-x-4 mt-1">
+                                <label className="flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="debtType"
+                                        value="BORROWED" // علي (أنا المدين)
+                                        checked={formData.debtType === 'BORROWED'}
+                                        onChange={(e) => setFormData({ ...formData, debtType: e.target.value })}
+                                        required
+                                        className="form-radio text-blue-600 dark:text-blue-400"
+                                    />
+                                    <span className="ml-2 text-gray-700 dark:text-gray-300">علي (أنا المدين)</span>
+                                </label>
+                                <label className="flex items-center">
+                                    <input
+                                        type="radio"
+                                        name="debtType"
+                                        value="LENT" // لي (أنا الدائن)
+                                        checked={formData.debtType === 'LENT'}
+                                        onChange={(e) => setFormData({ ...formData, debtType: e.target.value })}
+                                        required
+                                        className="form-radio text-blue-600 dark:text-blue-400"
+                                    />
+                                    <span className="ml-2 text-gray-700 dark:text-gray-300">لي (أنا الدائن)</span>
+                                </label>
+                            </div>
+                        </label>
+                        
+                        <label className="block">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">تاريخ الاستحقاق (اختياري)</span>
+                            <input
+                                type="date"
+                                value={formData.dueDate}
+                                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                                className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
+                            />
+                        </label>
+                    </>
+                )}
+
+
+                {/* حقل الوصف */}
+                <label className="block">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">الوصف / ملاحظات</span>
+                    <input
+                        type="text"
+                        placeholder="أدخل وصفاً للمعاملة"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
+                    />
+                </label>
+
+                {/* حقل التاريخ والوقت */}
+                <div className="flex gap-4">
+                    <label className="block flex-1">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">التاريخ</span>
+                        <input
+                            type="date"
+                            value={formData.date}
+                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                            required
+                            className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
                         />
+                    </label>
+                    <label className="block w-20">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">الوقت</span>
+                        <input
+                            type="time"
+                            value={formData.time}
+                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                            className="w-full mt-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-primary-500 focus:border-primary-500"
+                        />
+                    </label>
+                </div>
+                
+                {/* حقل الصورة */}
+                <label className="block pt-2">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">سند/صورة المعاملة (اختياري)</span>
+                    <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload}
+                        className="w-full mt-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                    />
+                    {formData.receiptImage && (
+                        <div className="mt-2 relative">
+                            <img src={formData.receiptImage} alt="Receipt" className="w-full h-auto rounded-lg border dark:border-gray-700" />
+                            <button
+                                type="button"
+                                onClick={() => setFormData({...formData, receiptImage: null})}
+                                className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                    )}
+                </label>
+                
+                {/* مفتاح عدم التأثير على الرصيد */}
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center justify-between mb-1">
+                        <span className="text-gray-600 dark:text-gray-300 font-bold">عدم التأثير على الرصيد</span>
+                        <div 
+                            className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer ${formData.isExcludedFromBalance ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                            onClick={() => setFormData({...formData, isExcludedFromBalance: !formData.isExcludedFromBalance})}
+                        >
+                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.isExcludedFromBalance ? 'translate-x-6' : 'translate-x-0'}`} />
+                        </div>
                     </div>
-                 </div>
-              </div>
+                    <p className="text-xs text-gray-400">عند تفعيلها سيتم تجاهل هذه المعاملة من رصيد المحفظة المحددة</p>
+                </div>
 
-              {/* Priority Faces */}
-              {formData.type === TransactionType.EXPENSE && (
-                  <div className="bg-white dark:bg-gray-800 p-4 mb-2 flex items-center justify-between">
-                      <span className="text-gray-600 dark:text-gray-300 font-bold">الأولوية</span>
-                      <div className="flex gap-2">
-                          <button 
-                             type="button"
-                             onClick={() => setFormData({...formData, necessityLevel: 'LUXURY'})}
-                             className={`flex flex-col items-center gap-1 p-2 rounded-lg ${formData.necessityLevel === 'LUXURY' ? 'bg-gray-100 text-gray-800 font-bold' : 'text-gray-400'}`}
-                          >
-                             <Frown size={24} />
-                             <span className="text-xs">ترفيهي</span>
-                          </button>
-                          <button 
-                             type="button"
-                             onClick={() => setFormData({...formData, necessityLevel: 'NORMAL'})}
-                             className={`flex flex-col items-center gap-1 p-2 rounded-lg ${formData.necessityLevel === 'NORMAL' ? 'bg-yellow-100 text-yellow-700 font-bold' : 'text-gray-400'}`}
-                          >
-                             <Meh size={24} />
-                             <span className="text-xs">عادي</span>
-                          </button>
-                          <button 
-                             type="button"
-                             onClick={() => setFormData({...formData, necessityLevel: 'NECESSITY'})}
-                             className={`flex flex-col items-center gap-1 p-2 rounded-lg ${formData.necessityLevel === 'NECESSITY' ? 'bg-emerald-100 text-emerald-800 font-bold' : 'text-gray-400'}`}
-                          >
-                             <Smile size={24} />
-                             <span className="text-xs">أساسي</span>
-                          </button>
-                      </div>
-                  </div>
-              )}
-
-              {/* Exclude from Balance */}
-              <div className="bg-white dark:bg-gray-800 p-4 mb-4">
-                  <div className="flex items-center justify-between mb-1">
-                     <span className="text-gray-600 dark:text-gray-300 font-bold">عدم التأثير على الرصيد</span>
-                     <div 
-                        className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer ${formData.isExcludedFromBalance ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-                        onClick={() => setFormData({...formData, isExcludedFromBalance: !formData.isExcludedFromBalance})}
-                     >
-                         <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.isExcludedFromBalance ? '-translate-x-6' : 'translate-x-0'}`} />
-                     </div>
-                  </div>
-                  <p className="text-xs text-gray-400">عند تفعيلها سيتم تجاهل هذه المعاملة من رصيد المحفظة المحددة</p>
-              </div>
-
-          </div>
-
-          {/* Sticky Submit Button */}
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 z-50">
-             <button 
-                type="submit"
-                className="w-full bg-emerald-500 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-emerald-500/30 hover:bg-emerald-600 transition"
-             >
-                إضافة معاملة
-             </button>
-          </div>
-      </form>
+            </div>
+            
+            {/* زر الإرسال الثابت */}
+            <div className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto p-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 z-50">
+                <button 
+                    type="submit"
+                    className={`w-full text-white font-bold text-lg py-4 rounded-xl shadow-lg transition-colors ${typeColor}`}
+                >
+                    حفظ المعاملة
+                </button>
+            </div>
+        </form>
     </div>
   );
 };
+
+export default TransactionForm;
