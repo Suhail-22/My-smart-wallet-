@@ -1,171 +1,141 @@
-
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings, ArrowDown, ArrowUp, HandCoins, Plus, Wallet, PieChart } from 'lucide-react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { 
+  Home, 
+  PlusCircle, 
+  CreditCard, 
+  TrendingUp, 
+  Settings, 
+  Calendar,
+  Wallet,
+  PieChart,
+  Moon,
+  Sun,
+  Menu,
+  X
+} from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { TransactionType } from '../types';
+import InstallButton from './InstallButton';
 
-export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [showFabMenu, setShowFabMenu] = useState(false);
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { theme, toggleTheme } = useApp();
   const location = useLocation();
-  const navigate = useNavigate();
-  const { theme, setDefaultTransactionType } = useApp();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Desktop Nav Items
-  const navItems = [
-    { path: '/', label: 'الرئيسية', icon: LayoutDashboard },
-    { path: '/budget', label: 'الميزانية', icon: PieChart }, 
-    { path: '/wallets', label: 'المحافظ', icon: Wallet },
-    { path: '/debts', label: 'الديون', icon: Users },
-    { path: '/settings', label: 'الإعدادات', icon: Settings },
+  const menuItems = [
+    { path: '/', label: 'الرئيسية', icon: <Home size={20} /> },
+    { path: '/add', label: 'إضافة معاملة', icon: <PlusCircle size={20} /> },
+    { path: '/transactions', label: 'المعاملات', icon: <CreditCard size={20} /> },
+    { path: '/budget', label: 'الميزانية', icon: <PieChart size={20} /> },
+    { path: '/wallets', label: 'المحافظ', icon: <Wallet size={20} /> },
+    { path: '/debts', label: 'الديون', icon: <Calendar size={20} /> },
+    { path: '/investments', label: 'الاستثمارات', icon: <TrendingUp size={20} /> },
+    { path: '/zakat', label: 'الزكاة', icon: <Calendar size={20} /> },
+    { path: '/settings', label: 'الإعدادات', icon: <Settings size={20} /> },
   ];
 
-  const handleFabAction = (type: 'INCOME' | 'EXPENSE' | 'DEBT') => {
-      setShowFabMenu(false);
-      if (type === 'DEBT') {
-          navigate('/debts');
-      } else {
-          setDefaultTransactionType(type === 'INCOME' ? TransactionType.INCOME : TransactionType.EXPENSE);
-          navigate('/add');
-      }
-  };
-
   return (
-    <div className={`${theme} min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 font-sans`}>
-      <div className="flex h-screen overflow-hidden">
-        
-        {/* --- DESKTOP SIDEBAR --- */}
-        <aside className="fixed inset-y-0 right-0 z-30 w-64 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 hidden lg:block transition-colors">
-          <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-700">
-            <h1 className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">محفظتي</h1>
-          </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-900 text-gray-800 dark:text-dark-200 flex flex-col md:flex-row">
+      {/* زر القائمة للجوال */}
+      <button
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-primary-600 text-white rounded-lg shadow-lg"
+      >
+        {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
 
-          <nav className="p-4 space-y-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              return (
+      {/* الشريط الجانبي */}
+      <aside className={`
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0 fixed md:relative 
+        w-64 h-full bg-white dark:bg-dark-800 
+        shadow-xl md:shadow-none 
+        z-40 transition-transform duration-300
+        flex flex-col
+      `}>
+        {/* رأس الشريط الجانبي */}
+        <div className="p-6 border-b border-gray-200 dark:border-dark-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
+              <Wallet className="text-white" size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">محفظتي الذكية</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">إدارة مالية ذكية</p>
+            </div>
+          </div>
+        </div>
+
+        {/* قائمة التنقل */}
+        <nav className="flex-1 p-4 overflow-y-auto">
+          <ul className="space-y-2">
+            {menuItems.map((item) => (
+              <li key={item.path}>
                 <Link
-                  key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                    isActive 
-                      ? 'bg-emerald-50 dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 font-bold' 
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={`
+                    flex items-center gap-3 p-3 rounded-lg transition-colors
+                    ${location.pathname === item.path
+                      ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                      : 'hover:bg-gray-100 dark:hover:bg-dark-700'
+                    }
+                  `}
                 >
-                  <Icon size={20} />
-                  <span>{item.label}</span>
+                  {item.icon}
+                  <span className="font-medium">{item.label}</span>
                 </Link>
-              );
-            })}
-          </nav>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-          <div className="absolute bottom-0 w-full p-4 border-t border-gray-100 dark:border-gray-700">
-            <Link 
-              to="/add" 
-              className="flex items-center justify-center gap-2 w-full bg-emerald-600 text-white py-3 rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-500/30"
-            >
-              <Plus size={20} />
-              <span>معاملة جديدة</span>
-            </Link>
+        {/* تذييل الشريط الجانبي */}
+        <div className="p-4 border-t border-gray-200 dark:border-dark-700">
+          <button
+            onClick={toggleTheme}
+            className="flex items-center justify-center gap-2 w-full p-3 rounded-lg bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 transition-colors"
+          >
+            {theme === 'dark' ? (
+              <>
+                <Sun size={20} />
+                <span>الوضع النهاري</span>
+              </>
+            ) : (
+              <>
+                <Moon size={20} />
+                <span>الوضع الليلي</span>
+              </>
+            )}
+          </button>
+          
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              الإصدار 1.0.0
+            </p>
           </div>
-        </aside>
-
-        {/* --- MAIN CONTENT --- */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-          {/* Desktop Header */}
-          <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between lg:hidden transition-colors">
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white">
-               {navItems.find(i => i.path === location.pathname)?.label || 'محفظتي'}
-            </h1>
-            <Link to="/settings" className="text-gray-500 dark:text-gray-300 hover:text-emerald-600">
-              <Settings size={24} />
-            </Link>
-          </header>
-
-          <main className="flex-1 overflow-y-auto p-4 lg:p-8 pb-24 lg:pb-8 text-gray-800 dark:text-gray-100">
-            <div className="max-w-md mx-auto w-full lg:max-w-5xl">
-              {children}
-            </div>
-          </main>
         </div>
+      </aside>
 
-        {/* --- MOBILE FAB MENU OVERLAY --- */}
-        {showFabMenu && (
-            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-end pb-28" onClick={() => setShowFabMenu(false)}>
-                <div className="flex flex-col gap-4 w-full max-w-xs px-6">
-                    <button onClick={() => handleFabAction('INCOME')} className="bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 p-4 rounded-2xl flex items-center gap-4 shadow-xl transform transition hover:scale-105">
-                        <div className="bg-emerald-100 dark:bg-emerald-900 p-2 rounded-full"><ArrowUp size={24}/></div>
-                        <span className="font-bold text-lg">تسجيل دخل</span>
-                    </button>
-                    <button onClick={() => handleFabAction('EXPENSE')} className="bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 p-4 rounded-2xl flex items-center gap-4 shadow-xl transform transition hover:scale-105">
-                        <div className="bg-red-100 dark:bg-red-900 p-2 rounded-full"><ArrowDown size={24}/></div>
-                        <span className="font-bold text-lg">تسجيل مصروف</span>
-                    </button>
-                     <button onClick={() => handleFabAction('DEBT')} className="bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 p-4 rounded-2xl flex items-center gap-4 shadow-xl transform transition hover:scale-105">
-                        <div className="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full"><HandCoins size={24}/></div>
-                        <span className="font-bold text-lg">تسجيل دين</span>
-                    </button>
-                </div>
-            </div>
+      {/* المحتوى الرئيسي */}
+      <main className="flex-1 overflow-y-auto">
+        {/* إغلاق الشريط الجانبي عند النقر خارجها على الجوال */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-30 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
         )}
-
-        {/* --- MOBILE BOTTOM NAVIGATION (Masareef Style) --- */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40 pb-safe transition-colors">
-          <div className="grid grid-cols-5 items-end h-16 relative">
-            
-            {/* 1. Home (Right) */}
-            <Link 
-              to="/"
-              className={`flex flex-col items-center justify-center h-full pb-2 ${location.pathname === '/' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}
-            >
-              <LayoutDashboard size={24} className={location.pathname === '/' ? 'fill-current opacity-20' : ''} strokeWidth={location.pathname === '/' ? 2.5 : 2} />
-              <span className="text-[10px] mt-1 font-medium">الرئيسية</span>
-            </Link>
-
-            {/* 2. Budget (Right-Center) */}
-            <Link 
-              to="/budget"
-              className={`flex flex-col items-center justify-center h-full pb-2 ${location.pathname === '/budget' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}
-            >
-              <PieChart size={24} className={location.pathname === '/budget' ? 'fill-current opacity-20' : ''} strokeWidth={location.pathname === '/budget' ? 2.5 : 2} />
-              <span className="text-[10px] mt-1 font-medium">الميزانية</span>
-            </Link>
-
-            {/* 3. FAB (Center) */}
-            <div className="relative h-full flex items-center justify-center pointer-events-none">
-               <div className="absolute -top-6 pointer-events-auto">
-                  <button 
-                    onClick={() => setShowFabMenu(!showFabMenu)}
-                    className={`bg-emerald-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40 border-4 border-gray-50 dark:border-gray-900 transform active:scale-95 transition ${showFabMenu ? 'rotate-45 bg-red-500' : ''}`}
-                  >
-                    <Plus size={32} />
-                  </button>
-               </div>
-            </div>
-
-            {/* 4. Wallets (Left-Center) */}
-             <Link 
-              to="/wallets"
-              className={`flex flex-col items-center justify-center h-full pb-2 ${location.pathname === '/wallets' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}
-            >
-              <Wallet size={24} className={location.pathname === '/wallets' ? 'fill-current opacity-20' : ''} strokeWidth={location.pathname === '/wallets' ? 2.5 : 2} />
-              <span className="text-[10px] mt-1 font-medium">المحافظ</span>
-            </Link>
-
-            {/* 5. Debts (Left) */}
-            <Link 
-              to="/debts"
-              className={`flex flex-col items-center justify-center h-full pb-2 ${location.pathname === '/debts' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`}
-            >
-              <Users size={24} className={location.pathname === '/debts' ? 'fill-current opacity-20' : ''} strokeWidth={location.pathname === '/debts' ? 2.5 : 2} />
-              <span className="text-[10px] mt-1 font-medium">الديون</span>
-            </Link>
-
-          </div>
+        
+        <div className="p-4 md:p-6 max-w-7xl mx-auto">
+          {children || <Outlet />}
         </div>
-      </div>
+      </main>
+
+      {/* زر التثبيت الإضافي - فقط نضيف هذا السطر */}
+      <InstallButton />
     </div>
   );
 };
+
+export default Layout;
