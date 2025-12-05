@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, Smartphone } from 'lucide-react';
 
-// إضافة تعريفات TypeScript
-declare global {
-  interface Window {
-    MSStream?: any;
-  }
-  interface Navigator {
-    standalone?: boolean;
-  }
-}
-
+// تعريف النوع لحدث beforeinstallprompt
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
@@ -20,22 +11,36 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
+// تعريف للنافذة الموسعة
+declare global {
+  interface Window {
+    MSStream?: unknown;
+  }
+}
+
 const InstallButton: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showButton, setShowButton] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // التحقق مما إذا كان التطبيق مثبتاً بالفعل
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                        (window.navigator as any).standalone ||
-                        document.referrer.includes('android-app://');
+    // الكشف عن iOS
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(ios);
+    
+    // الكشف عن تطبيق مثبت
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || 
+                      (window.navigator as any).standalone === true;
+    setIsStandalone(standalone);
 
-    if (isStandalone) {
+    // إذا كان مثبتاً بالفعل، لا تعرض الزر
+    if (standalone) {
       console.log('التطبيق مثبت بالفعل');
       return;
     }
 
-    // استمع لحدث التثبيت
+    // استمع لحدث التثبيت (لـ Android/Chrome)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -44,10 +49,9 @@ const InstallButton: React.FC = () => {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // الكشف عن iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS && !(window.navigator as any).standalone) {
-      setShowButton(true);
+    // إذا كان iOS ولم يكن مثبتاً، اعرض الزر بعد تأخير
+    if (ios && !standalone) {
+      setTimeout(() => setShowButton(true), 3000);
     }
 
     return () => {
@@ -56,15 +60,12 @@ const InstallButton: React.FC = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    // الكشف عن الجهاز
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const isAndroid = /Android/.test(navigator.userAgent);
-
     if (isIOS) {
       // إرشادات تثبيت iOS
       alert(`
 📱 تثبيت التطبيق على iPhone/iPad:
-1. انقر على زر المشاركة (⎋)
+
+1. انقر على زر المشاركة (⏍) في Safari
 2. مرر لأسفل واختر "أضف إلى الشاشة الرئيسية"
 3. انقر على "إضافة"
 
@@ -73,9 +74,9 @@ const InstallButton: React.FC = () => {
       return;
     }
 
-    if (isAndroid && deferredPrompt) {
+    if (deferredPrompt) {
       try {
-        deferredPrompt.prompt();
+        await deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         
         if (outcome === 'accepted') {
@@ -89,12 +90,12 @@ const InstallButton: React.FC = () => {
     }
   };
 
-  if (!showButton) return null;
+  if (!showButton || isStandalone) return null;
 
   return (
     <button
       onClick={handleInstallClick}
-      className="fixed bottom-4 left-4 z-50 bg-gradient-to-r from-primary-600 to-emerald-600 text-white px-6 py-3 rounded-xl shadow-2xl hover:shadow-primary-500/30 hover:scale-105 transition-all duration-300 flex items-center gap-2"
+      className="fixed bottom-4 left-4 z-50 bg-gradient-to-r from-primary-600 to-emerald-600 text-white px-6 py-3 rounded-xl shadow-2xl hover:shadow-primary-500/30 hover:scale-105 transition-all duration-300 flex items-center gap-2 animate-pulse"
     >
       <Download className="w-5 h-5" />
       <span className="font-bold">📱 تثبيت التطبيق</span>
