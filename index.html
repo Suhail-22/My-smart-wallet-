@@ -2,29 +2,25 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
-  <!-- PWA Meta Tags -->
-  <meta name="application-name" content="محفظتي الذكية">
+  <!-- إزالة الشريط العلوي في iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="المحفظة">
-  <meta name="description" content="تطبيق مالي شامل لإدارة المصروفات والديون والاستثمارات">
-  <meta name="format-detection" content="telephone=no">
+  
+  <!-- إزالة الشريط العلوي في Android -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="msapplication-TileColor" content="#0ea5e9">
-  <meta name="msapplication-tap-highlight" content="no">
   <meta name="theme-color" content="#0ea5e9">
   
   <title>محفظتي الذكية</title>
   
   <!-- Manifest -->
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href="/manifest.json">
   
-  <!-- Icons -->
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="apple-touch-icon" href="/icon-192x192.png">
-  <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png">
+  <!-- الأيقونات -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -61,34 +57,129 @@
         }
       }
     }
+    
+    // كشف وتحسين PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('Service Worker مسجل'))
+          .catch(err => console.log('خطأ:', err));
+      });
+    }
   </script>
   
   <style>
     body {
       font-family: 'Tajawal', sans-serif;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
+      margin: 0;
+      padding: 0;
+      overscroll-behavior: none;
     }
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
+    
+    /* إزالة الأشرطة السوداء في PWA */
+    html, body {
+      height: 100%;
+      overflow: hidden;
     }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+    
+    #root {
+      height: 100%;
     }
-    /* تحسين اللمس على الجوال */
-    button, a {
-      -webkit-tap-highlight-color: transparent;
-    }
-    @media (max-width: 768px) {
-      button, a, input, select {
-        font-size: 16px; /* منع التكبير في iOS */
+    
+    /* إخفاء شريط العناوين في PWA */
+    @media (display-mode: standalone) {
+      body {
+        padding-top: env(safe-area-inset-top);
       }
     }
   </style>
 </head>
-<body class="bg-gray-50 dark:bg-dark-900 text-gray-800 dark:text-dark-200">
+<body class="bg-gray-50 dark:bg-dark-900">
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
+  
+  <script>
+    // كشف التثبيت التلقائي
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      console.log('يمكن تثبيت التطبيق الآن!');
+      
+      // عرض زر تثبيت بعد 3 ثواني
+      setTimeout(() => {
+        const installBtn = document.createElement('button');
+        installBtn.innerHTML = '📱 تثبيت التطبيق';
+        installBtn.style.cssText = `
+          position: fixed;
+          bottom: 20px;
+          left: 20px;
+          background: linear-gradient(135deg, #0ea5e9, #10b981);
+          color: white;
+          padding: 12px 24px;
+          border-radius: 12px;
+          border: none;
+          font-weight: bold;
+          font-size: 16px;
+          z-index: 9999;
+          box-shadow: 0 4px 20px rgba(14, 165, 233, 0.3);
+          animation: pulse 2s infinite;
+        `;
+        
+        installBtn.onclick = () => {
+          e.prompt();
+          e.userChoice.then(() => {
+            installBtn.remove();
+          });
+        };
+        
+        document.body.appendChild(installBtn);
+      }, 3000);
+    });
+    
+    // رسالة تنبيه للتثبيت اليدوي
+    setTimeout(() => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                          window.navigator.standalone;
+      
+      if (!isStandalone && !localStorage.getItem('install_shown')) {
+        const manualInstall = document.createElement('div');
+        manualInstall.innerHTML = `
+          <div style="
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            right: 20px;
+            background: white;
+            color: #333;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 9998;
+            text-align: center;
+            direction: rtl;
+          ">
+            <h3 style="margin: 0 0 10px 0; color: #0ea5e9;">📱 تثبيت التطبيق</h3>
+            <p style="margin: 0 0 10px 0; font-size: 14px;">
+              للتثبيت: انقر على قائمة النقاط الثلاث ⋮ ثم "إضافة إلى الشاشة الرئيسية"
+            </p>
+            <button id="closeInstall" style="
+              background: #0ea5e9;
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              border-radius: 8px;
+              font-size: 14px;
+            ">حسناً</button>
+          </div>
+        `;
+        
+        document.body.appendChild(manualInstall);
+        
+        document.getElementById('closeInstall').onclick = () => {
+          manualInstall.remove();
+          localStorage.setItem('install_shown', 'true');
+        };
+      }
+    }, 5000);
+  </script>
 </body>
 </html>
