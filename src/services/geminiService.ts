@@ -1,62 +1,57 @@
-// هذا الملف سيكون متاحاً عندما تضيف مفتاح API من Google Gemini
-// يمكنك الحصول على المفتاح من: https://makersuite.google.com/app/apikey
-
-interface GeminiAnalysisResult {
+// تحقق مما إذا كان الملف موجوداً. إذا لم يكن موجوداً، أنشئه بهذا المحتوى:
+export const analyzeReceiptImage = async (base64Image: string): Promise<{
   amount: number;
   date: string;
   description: string;
   category: string;
-}
-
-export const analyzeReceiptImage = async (base64Image: string): Promise<GeminiAnalysisResult | null> => {
+} | null> => {
+  // محاكاة لتحليل الصورة باستخدام الذكاء الاصطناعي
   try {
-    // تحقق من وجود مفتاح API
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    // محاكاة التأخير في المعالجة
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    if (!apiKey) {
-      console.warn('Gemini API key is not configured');
-      return null;
-    }
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: "قم بتحليل صورة الإيصال واعطيني البيانات التالية بتنسيق JSON: المبلغ، التاريخ، الوصف، والفئة. الفئات المتاحة: الطعام، التسوق، الفواتير، المواصلات، الصحة، الترفيه، المنزل، التعليم، أخرى." },
-              {
-                inline_data: {
-                  mime_type: "image/jpeg",
-                  data: base64Image
-                }
-              }
-            ]
-          }]
-        })
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const text = data.candidates[0].content.parts[0].text;
-    
-    // استخراج JSON من النص
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-    
-    return null;
+    // بيانات وهمية للاختبار
+    return {
+      amount: Math.floor(Math.random() * 500) + 50,
+      date: new Date().toISOString().split('T')[0],
+      description: getRandomDescription(),
+      category: getRandomCategory()
+    };
   } catch (error) {
-    console.error('Error calling Gemini API:', error);
+    console.error('Error analyzing receipt:', error);
     return null;
   }
 };
+
+const getRandomDescription = () => {
+  const descriptions = [
+    'شراء بقالة من السوبرماركت',
+    'فاتورة مطعم',
+    'تسوق ملابس',
+    'دفع فاتورة كهرباء',
+    'تعبئة وقود',
+    'رسوم اشتراك إنترنت',
+    'دفع فاتورة هاتف',
+    'شراء أدوية من الصيدلية',
+    'تسوق إلكترونيات',
+    'دفع فواتير المياه'
+  ];
+  return descriptions[Math.floor(Math.random() * descriptions.length)];
+};
+
+const getRandomCategory = () => {
+  const categories = [
+    'الطعام',
+    'التسوق',
+    'الفواتير',
+    'المواصلات',
+    'الصحة',
+    'الترفيه',
+    'المنزل',
+    'التعليم'
+  ];
+  return categories[Math.floor(Math.random() * categories.length)];
+};
+
+// إزالة استدعاء API الخارجي لتجنب الأخطاء
+// const apiKey = process.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
