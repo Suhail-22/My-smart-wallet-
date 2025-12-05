@@ -1,24 +1,14 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
-  Home, 
-  PlusCircle, 
-  CreditCard, 
-  TrendingUp, 
-  Settings, 
-  Calendar,
-  Wallet,
-  PieChart,
-  Moon,
-  Sun,
-  Menu,
-  X
+  Home, PlusCircle, CreditCard, TrendingUp, Settings, 
+  Calendar, Wallet, PieChart, Moon, Sun, Menu, X
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import InstallButton from './InstallButton';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { theme, setTheme } = useApp(); // تغيير toggleTheme إلى setTheme
+  const { theme, setTheme } = useApp();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -39,11 +29,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-dark-900 text-gray-800 dark:text-dark-200 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-900 text-gray-800 dark:text-dark-200 flex flex-col md:flex-row safe-area">
       {/* زر القائمة للجوال */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-primary-600 text-white rounded-lg shadow-lg"
+        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-primary-600 text-white rounded-lg shadow-lg"
       >
         {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
@@ -54,11 +44,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         md:translate-x-0 fixed md:relative 
         w-64 h-full bg-white dark:bg-dark-800 
         shadow-xl md:shadow-none 
-        z-40 transition-transform duration-300
-        flex flex-col
+        z-30 transition-transform duration-300
+        flex flex-col safe-area-top
       `}>
         {/* رأس الشريط الجانبي */}
-        <div className="p-6 border-b border-gray-200 dark:border-dark-700">
+        <div className="p-4 border-b border-gray-200 dark:border-dark-700 safe-area-top">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
               <Wallet className="text-white" size={24} />
@@ -71,8 +61,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
 
         {/* قائمة التنقل */}
-        <nav className="flex-1 p-4 overflow-y-auto">
-          <ul className="space-y-2">
+        <nav className="flex-1 p-2 overflow-y-auto">
+          <ul className="space-y-1">
             {menuItems.map((item) => (
               <li key={item.path}>
                 <Link
@@ -95,7 +85,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </nav>
 
         {/* تذييل الشريط الجانبي */}
-        <div className="p-4 border-t border-gray-200 dark:border-dark-700">
+        <div className="p-3 border-t border-gray-200 dark:border-dark-700">
           <button
             onClick={toggleTheme}
             className="flex items-center justify-center gap-2 w-full p-3 rounded-lg bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 transition-colors"
@@ -112,32 +102,36 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </>
             )}
           </button>
-          
-          <div className="mt-4 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              الإصدار 1.0.0
-            </p>
-          </div>
         </div>
       </aside>
 
       {/* المحتوى الرئيسي */}
-      <main className="flex-1 overflow-y-auto">
-        {/* إغلاق الشريط الجانبي عند النقر خارجها على الجوال */}
+      <main className="flex-1 overflow-y-auto safe-area">
         {isSidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black/50 z-30 md:hidden"
+            className="fixed inset-0 bg-black/50 z-20 md:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
         
-        <div className="p-4 md:p-6 max-w-7xl mx-auto">
+        <div className="p-3 md:p-4 max-w-7xl mx-auto">
           {children || <Outlet />}
         </div>
       </main>
 
       {/* زر التثبيت */}
       <InstallButton />
+      
+      {/* CSS لمشكلة safe area */}
+      <style jsx>{`
+        .safe-area {
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+        .safe-area-top {
+          padding-top: env(safe-area-inset-top);
+        }
+      `}</style>
     </div>
   );
 };
