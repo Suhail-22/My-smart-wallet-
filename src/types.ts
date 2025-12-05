@@ -1,125 +1,54 @@
+// src/types.ts
 
-export enum TransactionType {
-  INCOME = 'INCOME',
-  EXPENSE = 'EXPENSE'
-}
-
+export type TransactionType = 'INCOME' | 'EXPENSE';
+export type WalletType = 'CASH' | 'BANK' | 'CARD' | 'OTHER';
 export enum DebtType {
-  LENT = 'LENT', // I gave money (Someone owes me)
-  BORROWED = 'BORROWED' // I took money (I owe someone)
+  BORROWED = 'BORROWED', // "عليّ" — أنا المدين
+  LENT = 'LENT',         // "لي" — أنا الدائن
 }
 
-export type Theme = 'light' | 'dark';
-export type Currency = 'YER' | 'SAR' | 'USD' | 'AED';
-
-export interface FinancialGoal {
+// === التصنيف الهرمي ===
+export interface Category {
   id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline?: string;
-}
-
-export interface Contact {
-  id: string;
-  name: string;
-  phone?: string;
+  label: string;            // اسم التصنيف (مثل: "الطعام")
+  icon: string;             // الرمز (مثل: "🍔")
+  type: TransactionType | 'debt'; // نوعه: دخل، مصروف، أو دين
+  children?: Category[];    // التصنيفات الفرعية (مثل: "فواكه"، "سندوتشات"... إلخ)
 }
 
 export interface Wallet {
   id: string;
   name: string;
-  type: 'CASH' | 'BANK' | 'DIGITAL' | 'DEBT' | 'OTHER'; 
-  balance: number; 
+  type: WalletType;
+  balance: number;
   currency: string;
-  isHidden?: boolean; 
-}
-
-export interface Category {
-  id: string;
-  label: string;
-  icon?: string; 
-  type: TransactionType;
-  isDefault: boolean;
-  budgetLimit?: number; 
+  color: string;
 }
 
 export interface Transaction {
   id: string;
   amount: number;
-  category: string; 
-  walletId?: string; 
-  description: string;
-  date: string;
   type: TransactionType;
-  receiptImage?: string; 
-  profit?: number; 
-  necessityLevel?: 'NECESSITY' | 'NORMAL' | 'LUXURY'; 
-  isRecurring?: boolean;
-  lastProcessedDate?: string; // Tracks when the last recurring copy was made
-  isExcludedFromBalance?: boolean;
-  contactName?: string; // Linked contact
-  groupName?: string; // Optional grouping
-  alertReminder?: boolean; // Reminder before due date/time
+  category: string;         // ID التصنيف
+  description?: string;
+  date: string;             // YYYY-MM-DD
+  walletId: string;
+  contactName?: string;
+  contactPhone?: string;    // <-- تم إضافته لدعم الاتصال المباشر
+  receiptImage?: string;
+  isExcludedFromBalance: boolean;
+  profit?: number;
+  investmentId?: string;
 }
 
 export interface Debt {
   id: string;
-  personName: string;
-  amount: number; 
-  initialAmount: number;
+  amount: number;
+  contactName: string;
+  contactPhone?: string;    // <-- تم إضافته لدعم الاتصال المباشر
+  debtType: DebtType;
   dueDate?: string;
-  type: DebtType;
-  notes?: string;
-  icon?: string; 
-  receiptImage?: string; 
-  walletId?: string; 
-}
-
-export interface Investment {
-  id: string;
-  assetName: string;
-  type: 'STOCK' | 'CRYPTO' | 'REAL_ESTATE' | 'GOLD' | 'COMMODITY' | 'OTHER'; 
-  quantity: number;
-  avgBuyPrice: number;
-  currentPrice: number;
-}
-
-export interface TelecomPackage {
-  id: string;
-  provider: 'Yemen Mobile' | 'You' | 'SabaFon' | 'Y' | 'Other' | 'Custom';
-  name: string;
-  cost: number; 
-  price: number; 
   description?: string;
-  isCustom?: boolean;
-}
-
-export interface DashboardWidget {
-  id: string;
-  type: 'BALANCE' | 'EXPENSE_CHART' | 'INVESTMENT_SUMMARY' | 'DEBT_SUMMARY' | 'AI_INSIGHTS' | 'PROFIT_SUMMARY' | 'GOALS' | 'WALLETS';
-  visible: boolean;
-  order: number;
-}
-
-export interface ZakatSettings {
-  goldPrice: number; 
-  lastPaidDate?: string;
-  nisabType: 'GOLD' | 'SILVER'; 
-}
-
-export interface AppState {
-  transactions: Transaction[];
-  debts: Debt[];
-  investments: Investment[];
-  widgets: DashboardWidget[];
-  categories: Category[];
-  wallets: Wallet[];
-  zakatSettings: ZakatSettings;
-  contacts: Contact[];
-  customPackages: TelecomPackage[];
-  theme: Theme;
-  currency: Currency;
-  goals: FinancialGoal[];
-  defaultTransactionType: TransactionType;
+  date: string;
+  isSettled: boolean;
 }
