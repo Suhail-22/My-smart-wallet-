@@ -1,37 +1,32 @@
+// src/App.tsx
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
-import Layout from './components/Layout'; // تغيير من { Layout } إلى Layout
-import { Dashboard } from './pages/Dashboard';
-import { TransactionForm } from './pages/TransactionForm';
-import { Debts } from './pages/Debts';
-import { Investments } from './pages/Investments';
-import { Settings } from './pages/Settings';
-import { Zakat } from './pages/Zakat';
-import { Transactions } from './pages/Transactions';
-import { Wallets } from './pages/Wallets';
-import { Budget } from './pages/Budget';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import Transactions from './pages/Transactions';
+import Budget from './pages/Budget';
+import Wallets from './pages/Wallets';
+import Debts from './pages/Debts';
+import Investments from './pages/Investments';
+import Settings from './pages/Settings';
+import Help from './pages/Help';
 
 const App: React.FC = () => {
   return (
-    <AppProvider>
-      <HashRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/add" element={<TransactionForm />} />
-            <Route path="/debts" element={<Debts />} />
-            <Route path="/investments" element={<Investments />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/zakat" element={<Zakat />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/wallets" element={<Wallets />} />
-            <Route path="/budget" element={<Budget />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      </HashRouter>
-    </AppProvider>
+    <Router>
+      <Routes>
+        {/* تأكد من أن كل صفحة داخل <Layout> */}
+        <Route path="/" element={<Layout><Dashboard /></Layout>} />
+        <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
+        <Route path="/budget" element={<Layout><Budget /></Layout>} />
+        <Route path="/wallets" element={<Layout><Wallets /></Layout>} />
+        <Route path="/debts" element={<Layout><Debts /></Layout>} />
+        <Route path="/investments" element={<Layout><Investments /></Layout>} />
+        <Route path="/settings" element={<Layout><Settings /></Layout>} />
+        <Route path="/help" element={<Layout><Help /></Layout>} />
+        {/* لا حاجة لصفحة /add منفصلة — الزر العائم يكفي */}
+      </Routes>
+    </Router>
   );
 };
 
