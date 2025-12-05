@@ -1,31 +1,32 @@
-/* إضافة إلى ملف index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* حل مشكلة safe area للشاشات المنحنية */
+/* ====== حل مشكلة safe area للشاشات المنحنية ====== */
 @supports (padding: max(0px)) {
   body {
     padding-left: min(0vmin, env(safe-area-inset-left));
     padding-right: min(0vmin, env(safe-area-inset-right));
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
-/* إخفاء شريط العناوين في PWA */
+/* ====== إخفاء شريط العناوين في PWA ====== */
 @media (display-mode: standalone) {
   body {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
+    background-color: #ffffff;
   }
 }
 
-/* تحسين اللمس */
+/* ====== تحسين اللمس ====== */
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* إصلاح ارتفاع 100vh على الجوال */
+/* ====== إصلاح ارتفاع 100vh على الجوال ====== */
 .min-h-screen {
   min-height: 100vh;
   min-height: -webkit-fill-available;
@@ -33,4 +34,141 @@
 
 html {
   height: -webkit-fill-available;
+  overflow-x: hidden;
+}
+
+/* ====== تحسينات للجوال ====== */
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+  
+  /* منع التكبير في حقول الإدخال على iOS */
+  input, select, textarea {
+    font-size: 16px !important;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+  
+  /* تحسين الأزرار للجوال */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ====== تحسينات عامة ====== */
+button:focus, a:focus, input:focus, select:focus {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* ====== تحسينات للشريط الجانبي ====== */
+aside {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+aside::-webkit-scrollbar {
+  display: none;
+}
+
+/* ====== تحسينات للظلال ====== */
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* ====== تحسينات للحركة ====== */
+.transition-transform {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* ====== تحسينات للنصوص العربية ====== */
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+}
+
+/* ====== تحسينات للجداول والقوائم ====== */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* ====== تحسينات للصور ====== */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ====== تحسينات للأشكال الهندسية ====== */
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+/* ====== منع التمرير الأفقي ====== */
+body, html {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ====== تحسينات للوضع الليلي ====== */
+@media (prefers-color-scheme: dark) {
+  .dark\:bg-dark-900 {
+    background-color: #0f172a;
+  }
+}
+
+/* ====== تحسينات للرسوم المتحركة ====== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ====== تحسينات للبطاقات ====== */
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* ====== تحسينات للنماذج ====== */
+input, select, textarea {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  transition: border-color 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.dark input, .dark select, .dark textarea {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+.dark input:focus, .dark select:focus, .dark textarea:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
 }
