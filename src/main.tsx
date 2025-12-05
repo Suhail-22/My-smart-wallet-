@@ -3,37 +3,40 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-// Polyfill لـ crypto.randomUUID
-if (typeof window !== 'undefined' && window.crypto) {
+// تسجيل Service Worker بسيط
+if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('SW مسجل:', registration.scope);
+      })
+      .catch(error => {
+        console.log('SW فشل التسجيل:', error);
+      });
+  });
+}
+
+// Polyfill محسّن لـ crypto.randomUUID
+if (typeof window !== 'undefined') {
+  if (!window.crypto) {
+    (window as any).crypto = {};
+  }
+  
   if (!window.crypto.randomUUID) {
-    // @ts-ignore - نحتاج لتجاهل خطأ TypeScript هنا
-    window.crypto.randomUUID = function() {
+    const generateUUID = () => {
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0;
         const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       });
     };
+    
+    (window.crypto as any).randomUUID = generateUUID;
   }
 }
 
-// تسجيل service worker
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .then((registration) => {
-        console.log('Service Worker مسجل:', registration.scope);
-      })
-      .catch((error) => {
-        console.log('فشل تسجيل Service Worker:', error);
-      });
-  });
-}
-
 const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Failed to find the root element");
-}
+if (!rootElement) throw new Error('لم يتم العثور على عنصر الجذر');
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
