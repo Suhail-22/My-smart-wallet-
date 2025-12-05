@@ -2,14 +2,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Transactions from './pages/Transactions';
-import Budget from './pages/Budget';
-import Wallets from './pages/Wallets';
-import Debts from './pages/Debts';
-import Investments from './pages/Investments';
-import Settings from './pages/Settings';
-import Help from './pages/Help';
+import { Dashboard } from './pages/Dashboard'; // ✅ تم تعديل الاستيراد
+import { Transactions } from './pages/Transactions'; // ✅ تم تعديل الاستيراد
+import { Budget } from './pages/Budget'; // ✅ تم تعديل الاستيراد
+import { Wallets } from './pages/Wallets'; // ✅ تم تعديل الاستيراد
+import { Debts } from './pages/Debts'; // ✅ تم تعديل الاستيراد
+import { Investments } from './pages/Investments'; // ✅ تم تعديل الاستيراد
+import { Settings } from './pages/Settings'; // ✅ تم تعديل الاستيراد
 
 const App: React.FC = () => {
   return (
@@ -23,8 +22,7 @@ const App: React.FC = () => {
         <Route path="/debts" element={<Layout><Debts /></Layout>} />
         <Route path="/investments" element={<Layout><Investments /></Layout>} />
         <Route path="/settings" element={<Layout><Settings /></Layout>} />
-        <Route path="/help" element={<Layout><Help /></Layout>} />
-        {/* لا حاجة لصفحة /add منفصلة — الزر العائم يكفي */}
+        {/* تم حذف /help لأنه غير موجود */}
       </Routes>
     </Router>
   );
