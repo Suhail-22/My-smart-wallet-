@@ -1,3 +1,4 @@
+// src/main.tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -8,7 +9,6 @@ if (typeof window !== 'undefined') {
   if (!window.crypto) {
     (window as any).crypto = {};
   }
-  
   if (!window.crypto.randomUUID) {
     const generateUUID = () => {
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -17,20 +17,19 @@ if (typeof window !== 'undefined') {
         return v.toString(16);
       });
     };
-    
     (window.crypto as any).randomUUID = generateUUID;
   }
 }
 
-// Register service worker in production
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// ✅ تسجيل Service Worker في جميع الأحوال (لتمكين العمل دون اتصال)
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(registration => {
-        console.log('SW registered: ', registration);
+        console.log('Service Worker registered:', registration);
       })
-      .catch(registrationError => {
-        console.log('SW registration failed: ', registrationError);
+      .catch(error => {
+        console.error('Service Worker registration failed:', error);
       });
   });
 }
