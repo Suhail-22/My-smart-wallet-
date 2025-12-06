@@ -5,35 +5,26 @@ import { AppProvider } from './context/AppContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Debts from './pages/Debts';
-import DebtDetails from './pages/DebtDetails'; // ← صفحة جديدة (سأرسلها لاحقًا)
 import Investments from './pages/Investments';
 import Settings from './pages/Settings';
 import Zakat from './pages/Zakat';
 import Transactions from './pages/Transactions';
 import Wallets from './pages/Wallets';
 import Budget from './pages/Budget';
-import CategoriesManager from './pages/CategoriesManager';
-import TransactionForm from './pages/TransactionForm';
 
 const App: React.FC = () => {
   return (
     <AppProvider>
       <HashRouter>
         <Routes>
-          {/* جميع الصفحات داخل <Layout> */}
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
           <Route path="/debts" element={<Layout><Debts /></Layout>} />
-          <Route path="/debt/:contactName" element={<Layout><DebtDetails /></Layout>} />
           <Route path="/investments" element={<Layout><Investments /></Layout>} />
           <Route path="/settings" element={<Layout><Settings /></Layout>} />
-          <Route path="/settings/categories" element={<Layout><CategoriesManager /></Layout>} />
           <Route path="/zakat" element={<Layout><Zakat /></Layout>} />
           <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
           <Route path="/wallets" element={<Layout><Wallets /></Layout>} />
           <Route path="/budget" element={<Layout><Budget /></Layout>} />
-          
-          {/* إعادة توجيه /add إلى الصفحة الرئيسية (لا حاجة له) */}
-          <Route path="/add" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </HashRouter>

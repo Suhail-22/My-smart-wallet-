@@ -21,7 +21,7 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// ✅ تسجيل Service Worker في جميع الأحوال (لتمكين العمل دون اتصال)
+// تسجيل Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
